@@ -53,14 +53,21 @@ def cambiar_gen(gen):
 
 # SELECCION
 # Por ruleta
+def seleccion_ruleta(poblacion):
+    pass
 
 # Aleatoria
 def seleccion_aleatoria(poblacion):
     padre1, padre2 = random.sample(poblacion, k=2)   # Elijo sin reemplazo, evito que se repita el mismo padre
     return padre1, padre2
 
-# Por elitismo / torneo
+# Por elitismo
+def seleccion_elitismo(poblacion):
+    pass
 
+# Por torneo
+def seleccion_torneo(poblacion):
+    pass
 
 
 # PROGRAMA
@@ -71,7 +78,6 @@ poblacion = []
 cantidadCromosomas = 10
 cantGenes = 30
 arregloFitness = []
-#gen = []
 probCrossOver = 0.75
 probMutacion = 0.05
 coeficiente = (2 ** cantGenes) - 1
@@ -85,17 +91,11 @@ for i in range(cantidadCromosomas):
 print(poblacion[0])
 print(poblacion[0][0])
 
-#lista = [int, List[int], int, int, float]
 
 # Calculo el fitness de un cromosoma
 for crom in poblacion:
     decimal = binario_A_Decimal(crom)
     fitness_value = fitness(decimal, poblacion)
     print(f"Cromosoma: {crom} -> Fitness: {fitness_value}")
-    #arregloFitness.append(fitness(funcionObjetivo(gen), poblacion))                # No iría gen
-    #cromosoma.append(fitness(funcionObjetivo(binario_A_Decimal(crom)), poblacion))         # A cromosoma le hago el append?
 
 print(poblacion)
-
-
-
