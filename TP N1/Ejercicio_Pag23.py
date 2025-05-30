@@ -8,20 +8,12 @@ def completoCromosoma(cantidad):
     return cromosoma
 
 def generarPoblacion(cantidadCromosomas, cantidadGenes):
+    poblacion = []
     for i in range(cantidadCromosomas):
         cromosoma = []
         cromosoma = completoCromosoma(cantidadGenes)
         poblacion.append(cromosoma)
     return poblacion
-
-'''
-def fitness(decimal, poblacion, cantGenes):
-    total = 0
-    for i in range(len(poblacion)):
-        total += funcionObjetivo(binarioADecimal(poblacion[i], cantGenes), 2 ** len(poblacion[i]) - 1)
-
-    return decimal / total
-'''
     
 def funcionObjetivo(x, coef):
     return (x / coef) ** 2  
@@ -32,70 +24,53 @@ def binarioADecimal(cromosoma, cantGenes):
         decimal += cromosoma[i] * (2 ** (cantGenes - 1 - i))
     return decimal 
 
-def crossoverUnPunto(cantGenes, padres):
+def crossover1Punto(cantGenes, padres):
     lugarCorte = random.randint(1, cantGenes - 1)
-    hijoUno = []
-    hijoDos = []
+    hijo1 = []
+    hijo2 = []
     for i in range(lugarCorte):
-        hijoUno.append(padres[0][i])
-        hijoDos.append(padres[1][i])
+        hijo1.append(padres[0][i])
+        hijo2.append(padres[1][i])
     for i in range(lugarCorte, cantGenes):
-        hijoUno.append(padres[1][i])
-        hijoDos.append(padres[0][i])
-    hijos = [hijoUno, hijoDos]
+        hijo1.append(padres[1][i])
+        hijo2.append(padres[0][i])
+    hijos = [hijo1, hijo2]
     return hijos
 
-def mutar(cromosoma, prob_mutacion):            # Mutacion para probabilidades de hasta 0,0001
-    for i in range(len(cromosoma)):
-        
-        if (prob_mutacion*10000 >= random.randint(1, 10000)):
-            cromosoma[i] = cambiar_gen(cromosoma[i])
-    return cromosoma
-
-def cambiar_gen(gen):
-    if gen == 0:
-        gen = 1
-    else:
-        gen = 0
-    return gen
+def mutacionInvertida(cantGenes, hijo):
+    if cantGenes < 2:
+        return hijo  # No se puede invertir si hay menos de 2 genes
+    posInicial = random.randint(0, cantGenes - 2)
+    posFinal = random.randint(posInicial + 1, cantGenes - 1)
+    segmento = hijo[posInicial:posFinal + 1]
+    hijo[posInicial:posFinal + 1] = segmento[::-1]  # Invertir el segmento
+    return hijo
 
 # SELECCION
-# Por ruleta
-def seleccion_ruleta(poblacion):
-    pass
-
 # Aleatoria
-def seleccion_aleatoria(poblacion):
+def seleccionAleatoria(poblacion):
     padres = random.sample(poblacion, k=2)   # Elijo sin reemplazo, evito que se repita el mismo padre
     return padres
-# Por elitismo
-def seleccion_elitismo(poblacion):
+
+# Ruleta
+def seleccionRuleta(poblacion):
     pass
 
-# Por torneo
-def seleccion_torneo(poblacion):
+# Torneo
+def seleccionTorneo(poblacion):
     pass
 
-'''
-def seleccionRandom(poblacion):
-    padre1 = random.choice(poblacion)
-
-    posible_padre2 = random.choice(poblacion)
-    while padre1 == posible_padre2:
-        posible_padre2 = random.choice(poblacion)
-
-    padre2 = posible_padre2
-
-    return padre1, padre2
-'''
+# Elitismo
+def seleccionElitismo(poblacion):
+    pass
 
 # PROGRAMA
 # No usar macros ni librerias ni nada para el metodo de selección de padres.
 probCrossover = 0.75
-probMutacion = 0.05
+probMutacion = 0.99 #Cambiar luego a 0.05
 cantidadCromosomas = 10
 ciclosPrograma = 1 #Cambiar luego a 20
-cantGenes = 30
+cantGenes = 10 #Cambiar luego a 30
 coef = (2 ** cantGenes) - 1
 poblacion = []
 arregloFitness = []
@@ -104,10 +79,7 @@ corrida_elitismo = []
 
 # Generar la poblacion inicial
 poblacion = generarPoblacion(cantidadCromosomas, cantGenes)
-
-for crom in poblacion:
-    print(crom)
-print()
+print("----Población Inicial----")
 
 #Solo una corrida
 
@@ -127,15 +99,27 @@ for crom, funcObjValor in zip(poblacion, funcObjValores):
     print(f"Cromosoma: {crom} -> Fitness: {fitnessValor}")
 print()
 
-print("----Padres----")
-padres = seleccion_aleatoria(poblacion) #Selección de prueba
+print("----Selección----")
+padres = seleccionAleatoria(poblacion) #Selección de prueba
 for padre in padres:
     print(f"Cromosoma: {padre}")
 print()    
 
-print("----Hijos----")
+print("----Crossover----")
 if random.uniform(0, 1) <= probCrossover:
-    hijos = crossoverUnPunto(cantGenes, padres)
+    hijos = crossover1Punto(cantGenes, padres)
+else:
+    hijos = padres
 for hijo in hijos:
     print(f"Cromosoma: {hijo}")
+print()
+
+print("----Mutaciones----")
+for i in range(len(hijos)):
+    if random.uniform(0, 1) <= probMutacion:
+        hijos[i] = mutacionInvertida(cantGenes, hijos[i])
+i = 0
+for hijo in hijos:
+    print(f"Mutación en el hijo {i + 1}: {hijo}")
+    i += 1
 print()
