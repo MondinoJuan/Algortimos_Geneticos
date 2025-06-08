@@ -53,8 +53,25 @@ def seleccionAleatoria(poblacion):
     return padres
 
 # Ruleta
-def seleccionRuleta(poblacion):
-    pass
+def seleccionRuleta(poblacion, fitnessValores):
+    probAcumulativas = []
+    probAcum = 0
+    for fitness in fitnessValores:
+        probAcum += fitness
+        probAcumulativas.append(probAcum)
+
+    padres = []
+    indicesPadres = []
+    while len(padres) < 2:
+        probAleatoria = random.random()
+        for i, probAcum in enumerate(probAcumulativas):
+            if probAleatoria <= probAcum:
+                if i not in indicesPadres:
+                    padres.append(poblacion[i])
+                    indicesPadres.append(i)
+                break
+
+    return padres, indicesPadres
 
 # Torneo
 def seleccionTorneo(poblacion):
@@ -72,12 +89,11 @@ cantidadCromosomas = 10
 ciclosPrograma = 1 #Cambiar luego a 20
 cantGenes = 10 #Cambiar luego a 30
 coef = (2 ** cantGenes) - 1
-poblacion = []
-arregloFitness = []
 corrida_random = []
 corrida_elitismo = []
 
 # Generar la poblacion inicial
+poblacion = []
 poblacion = generarPoblacion(cantidadCromosomas, cantGenes)
 print("----Población Inicial----")
 
@@ -100,6 +116,7 @@ for crom, funcObjValor in zip(poblacion, funcObjValores):
 print()
 
 print("----Selección----")
+#seleccionRuleta(poblacion, fitnessValores)
 padres = seleccionAleatoria(poblacion) #Selección de prueba
 for padre in padres:
     print(f"Cromosoma: {padre}")
