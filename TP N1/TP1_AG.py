@@ -3,6 +3,7 @@ import os
 import sys
 import matplotlib.pyplot as plt
 import pandas as pd
+# Utiliza openpyxl tambien
 
 # GENERAL
 # Poblacion inicial
@@ -37,7 +38,7 @@ def binarioADecimal(cromosoma):
     return decimal
 
 def funcionObjetivo(x):
-    return (x / (2 ** cantidadGenes) - 1) ** 2  
+    return (x / coef) ** 2  
 
 def calculadorEstadisticos(poblacion):
     objetivos = [funcionObjetivo(binarioADecimal(ind)) for ind in poblacion]
@@ -247,6 +248,7 @@ def ciclos_sin_elitismo(ciclos, prob_crossover, prob_mutacion,cantidadIndividuos
 # TABLAS EXCEL
 def crear_tabla(maximos, minimos, promedios, mejores, titulo=''):
     cadenas = [''.join(str(num) for num in cromosoma) for cromosoma in mejores]
+    decimales = [str(binarioADecimal(cromosoma)) for cromosoma in mejores]
     archivo_excel = 'TP1_AG_TABLA_EXCEL.xlsx'
 
     df_nuevo = pd.DataFrame({
@@ -254,6 +256,7 @@ def crear_tabla(maximos, minimos, promedios, mejores, titulo=''):
         'Max': maximos,
         'Min': minimos,
         'AVG': promedios,
+        'Mejor Cromosoma en Decimal': decimales,
         'Mejor Cromosoma': cadenas,
     })
 
