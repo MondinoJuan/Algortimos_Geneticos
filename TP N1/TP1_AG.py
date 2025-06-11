@@ -79,7 +79,6 @@ def crossover1Punto(padre, madre):
     return h1, h2
 
 # Mutacion
-
 def operadorMutacion(individuo):
     gen_a_mutar = random.randint(0,len(individuo)-1)
     individuo[gen_a_mutar] = 1 - individuo[gen_a_mutar]
@@ -96,7 +95,6 @@ def mutacionInvertida(cantGenes, hijo):
     return hijo
 
 # SELECCION
-
 # Ruleta
 def seleccionRuleta(poblacion, fitnessValores, cantidad):
     arregloRuleta = []
@@ -195,7 +193,7 @@ def ciclos_con_elitismo(ciclos, prob_crossover, prob_mutacion,cantidadIndividuos
     return maximos, minimos, promedios, mejores
 
 # Sin elitismo
-def ciclos_sin_elitismo(ciclos, prob_crossover, prob_mutacion,cantidadIndividuos, cant_genes, metodo_seleccion, cantidadCompetidores=None):
+def ciclos_sin_elitismo(ciclos, prob_crossover, prob_mutacion, cantidadIndividuos, cant_genes, metodo_seleccion, cantidadCompetidores=None):
     maximos=[]
     minimos=[]
     promedios=[]
@@ -245,19 +243,32 @@ def ciclos_sin_elitismo(ciclos, prob_crossover, prob_mutacion,cantidadIndividuos
     return maximos, minimos, promedios, mejores
 
 # TABLAS EXCEL
-def crear_tabla(maximos, minimos, promedios, mejores, titulo=''):
+def crear_tabla(maximos, minimos, promedios, mejores, metodo_seleccion, elitismo_Bool):
     cadenas = [''.join(str(num) for num in cromosoma) for cromosoma in mejores]
     decimales = [str(binarioADecimal(cromosoma)) for cromosoma in mejores]
-    archivo_excel = 'TP1_AG_TABLA_EXCEL.xlsx'
+
+    nombreMetodo = ''
+    nombreElitismo = ''
+    nombreCantidadCiclos = str(len(maximos)-1)
+
+    if metodo_seleccion == 'r':
+        nombreMetodo = '_Ruleta'
+    else:
+        nombreMetodo = '_Torneo'
+
+    if elitismo_Bool == 1:
+        nombreElitismo = '_Elitismo'
 
     df_nuevo = pd.DataFrame({
         'Corrida': range(len(maximos)),
         'Max': maximos,
         'Min': minimos,
         'AVG': promedios,
-        'Mejor Cromosoma en Decimal': decimales,
+        'Decimal': decimales,
         'Mejor Cromosoma': cadenas,
     })
+
+    archivo_excel = 'VALORES_' + nombreCantidadCiclos + 'Ciclos' + nombreMetodo + nombreElitismo + '.xlsx'
 
     if os.path.exists(archivo_excel):
         os.remove(archivo_excel)
@@ -332,8 +343,7 @@ if int(sys.argv[6]) == 1:
     else:
         titulo = 'Seleccion TORNEO ELITISTA - de '+ str(ciclosPrograma) + ' ciclos'
     generar_grafico(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, titulo, ciclosPrograma)
-    crear_tabla(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores)
-
+    crear_tabla(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, sys.argv[4], int(sys.argv[6]))
 else:
     maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores = ciclos_sin_elitismo(ciclosPrograma,probCrossover, probMutacion, cantidadIndividuos, cantidadGenes, sys.argv[4], cantidadCompetidores=cantidadCompetidores)
     if sys.argv[4] == 'r':
@@ -341,4 +351,4 @@ else:
     else:
         titulo = 'Seleccion TORNEO - de '+ str(ciclosPrograma) + ' ciclos'
     generar_grafico(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, titulo, ciclosPrograma)
-    crear_tabla(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores)
+    crear_tabla(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, sys.argv[4], int(sys.argv[6]))
