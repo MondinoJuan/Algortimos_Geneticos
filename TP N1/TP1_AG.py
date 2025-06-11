@@ -268,15 +268,38 @@ def crear_tabla(maximos, minimos, promedios, mejores, titulo=''):
 # GRAFICOS
 def generar_grafico(maximos, minimos, promedios, mejores, titulo, ciclo):
     x = list(range(len(maximos)))
-    plt.plot(x, maximos, marker='o', linestyle='-', color='b', linewidth=0.7, markersize=2, label="Maximos")
-    plt.plot(x, minimos, marker='o', linestyle='-', color='g', linewidth=0.7, markersize=2, label="Minimos")
-    plt.plot(x, promedios, marker='o', linestyle='-', color='r', linewidth=0.7, markersize=2, label="Promedios")
-    plt.xlabel('CORRIDA')
-    plt.ylabel('APTITUD')
-    plt.ylim(0, 1.2)
-    plt.xlim(0, ciclo+2)
-    plt.legend()
-    plt.title(titulo)
+
+    # Crear una figura con 3 subplots en una fila
+    fig, axs = plt.subplots(1, 3, figsize=(15, 4))  # (filas, columnas)
+
+    # Gráfico de Máximos
+    axs[0].plot(x, maximos, marker='o', linestyle='-', color='b', linewidth=0.7, markersize=2)
+    axs[0].set_title('Máximos')
+    axs[0].set_xlabel('CORRIDA')
+    axs[0].set_ylabel('APTITUD')
+    axs[0].set_ylim(0, 1.2)
+    axs[0].set_xlim(0, ciclo + 2)
+    axs[0].grid(True)
+
+    # Gráfico de Mínimos
+    axs[1].plot(x, minimos, marker='o', linestyle='-', color='g', linewidth=0.7, markersize=2)
+    axs[1].set_title('Mínimos')
+    axs[1].set_xlabel('CORRIDA')
+    axs[1].set_ylim(0, 1.2)
+    axs[1].set_xlim(0, ciclo + 2)
+    axs[1].grid(True)
+
+    # Gráfico de Promedios
+    axs[2].plot(x, promedios, marker='o', linestyle='-', color='r', linewidth=0.7, markersize=2)
+    axs[2].set_title('Promedios')
+    axs[2].set_xlabel('CORRIDA')
+    axs[2].set_ylim(0, 1.2)
+    axs[2].set_xlim(0, ciclo + 2)
+    axs[2].grid(True)
+
+    # Título general
+    fig.suptitle(titulo, fontsize=14)
+    plt.tight_layout(rect=[0, 0, 1, 0.95])  # Deja lugar para el título
     plt.show()
 
 # PROGRAMA PRINCIPAL
@@ -319,4 +342,3 @@ else:
         titulo = 'Seleccion TORNEO - de '+ str(ciclosPrograma) + ' ciclos'
     generar_grafico(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, titulo, ciclosPrograma)
     crear_tabla(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores)
-
