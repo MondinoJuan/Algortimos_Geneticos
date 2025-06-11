@@ -6,7 +6,6 @@ import pandas as pd
 # Utiliza openpyxl tambien
 
 # GENERAL
-# Poblacion inicial
 def limpiar_pantalla():
     if os.name == 'nt':  # Windows
         os.system('cls')
