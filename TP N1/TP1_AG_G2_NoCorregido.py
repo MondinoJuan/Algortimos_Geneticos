@@ -30,6 +30,7 @@ def binarioADecimal(cromosoma):
     return decimal
 
 def funcionObjetivo(x):
+    coef = (2 ** 30) - 1
     return (x / coef) ** 2  
 
 def calculadorEstadisticos(poblacion):
@@ -37,8 +38,8 @@ def calculadorEstadisticos(poblacion):
     max_objetivos = max(objetivos)
     min_objetivos = min(objetivos)
     mejor_cromosoma = poblacion[objetivos.index(max_objetivos)]
-    avg_objetivos = round((sum(objetivos)/len(objetivos)),4)
-    return [max_objetivos,min_objetivos, avg_objetivos, mejor_cromosoma]  
+    prom_objetivos = round((sum(objetivos)/len(objetivos)),4)
+    return [max_objetivos,min_objetivos, prom_objetivos, mejor_cromosoma]  
 
 def calculadorFitness(poblacion):
     fitness = []
@@ -51,7 +52,7 @@ def calculadorFitness(poblacion):
         obj = funcionObjetivo(decimal)
         objetivos.append(obj)
         sumatoria += obj
- 
+
     if sumatoria == 0:
         print ('La suma de los valores es igual a cero.', poblacion)
         exit()
@@ -70,10 +71,15 @@ def crossover1Punto(padre, madre):
     return h1, h2
 
 # Mutacion
-def operadorMutacion(individuo):
-    gen_a_mutar = random.randint(0,len(individuo)-1)
-    individuo[gen_a_mutar] = 1 - individuo[gen_a_mutar]
-    return individuo
+def mutacionInvertida(hijo):
+    cantGenes = len(hijo)
+    if cantGenes < 2:
+        return hijo  # No se puede invertir si hay menos de 2 genes
+    posInicial = random.randint(0, cantGenes - 2)
+    posFinal = random.randint(posInicial + 1, cantGenes - 1)
+    segmento = hijo[posInicial:posFinal + 1]
+    hijo[posInicial:posFinal + 1] = segmento[::-1]  # Invertir el segmento
+    return hijo
 
 # SELECCION
 # Ruleta
@@ -123,12 +129,13 @@ def ciclos_con_elitismo(ciclos, prob_crossover, prob_mutacion,cantidadIndividuos
     rta = calculadorEstadisticos(pob)
 
     for j in range (ciclos):
-        #De la poblacion me quedo con los de elite.
+        #De la poblacion me quedo con los de élite.
         elitistas = [] 
-        fit_ordenados = sorted(fit, reverse=True)
+        fitness_individuos = list(zip(fit, pob)) #Creo lista de tuplas con fitness y cromosomas
+        fitness_individuos.sort(key=lambda x: x[0], reverse=True) # Ordeno de mayor a menor por fitness
+        # Seleccionar los mejores individuos únicos
         for i in range(cantidadElitismo):
-            indice = fit.index(fit_ordenados[i])
-            elitistas.append(pob[indice])
+            elitistas.append(fitness_individuos[i][1])
 
         if metodo_seleccion == 'r':
             pob = seleccionRuleta(pob,fit, cantidadIndividuos-cantidadElitismo)
@@ -143,9 +150,9 @@ def ciclos_con_elitismo(ciclos, prob_crossover, prob_mutacion,cantidadIndividuos
                 pob[i], pob[i+1] = hijo1, hijo2
             
             if random.random() < prob_mutacion: 
-                pob[i] = operadorMutacion(pob[i])
+                pob[i] = mutacionInvertida(pob[i])
             if random.random() < prob_mutacion: 
-                pob[i+1] = operadorMutacion(pob[i+1])   
+                pob[i+1] = mutacionInvertida(pob[i+1])   
 
         pob = pob + elitistas
         fit = calculadorFitness(pob)
@@ -187,9 +194,9 @@ def ciclos_sin_elitismo(ciclos, prob_crossover, prob_mutacion, cantidadIndividuo
                 hijo1, hijo2 = crossover1Punto(padre,madre)
                 pob[i], pob[i+1] = hijo1, hijo2
             if random.random() < prob_mutacion: 
-                pob[i] = operadorMutacion(pob[i])
+                pob[i] = mutacionInvertida(pob[i])
             if random.random() < prob_mutacion: 
-                pob[i+1] = operadorMutacion(pob[i+1])
+                pob[i+1] = mutacionInvertida(pob[i+1])
         fit = calculadorFitness(pob)
         rta = calculadorEstadisticos(pob)
         #GUARDAR VALORES NECESARIOS PARA LA GRAFICA
@@ -200,6 +207,26 @@ def ciclos_sin_elitismo(ciclos, prob_crossover, prob_mutacion, cantidadIndividuo
     return maximos, minimos, promedios, mejores
 
 # TABLAS EXCEL
+def formatear_hoja_excel(hoja_trabajo):
+    from openpyxl.styles import Font
+    
+    # Ajustar ancho de columnas automáticamente
+    for columna in hoja_trabajo.columns:
+        longitud_maxima = 0
+        letra_columna = columna[0].column_letter
+        for celda in columna:
+            try:
+                if len(str(celda.value)) > longitud_maxima:
+                    longitud_maxima = len(str(celda.value))
+            except:
+                pass
+        ancho_ajustado = min(longitud_maxima + 2, 50)  # Máximo 50 caracteres
+        hoja_trabajo.column_dimensions[letra_columna].width = ancho_ajustado
+    
+    # Aplicar negrita a la primera fila (encabezados)
+    for celda in hoja_trabajo[1]:
+        celda.font = Font(bold=True)
+
 def crear_tabla(maximos, minimos, promedios, mejores, metodo_seleccion, elitismo_Bool):
     cadenas = [''.join(str(num) for num in cromosoma) for cromosoma in mejores]
     decimales = [str(binarioADecimal(cromosoma)) for cromosoma in mejores]
@@ -225,44 +252,41 @@ def crear_tabla(maximos, minimos, promedios, mejores, metodo_seleccion, elitismo
         'Mejor Cromosoma': cadenas,
     })
 
-    archivo_excel = 'VALORES_' + nombreCantidadCiclos + 'Ciclos' + nombreMetodo + nombreElitismo + '.xlsx'
+    archivo_excel = f'VALORES_{nombreCantidadCiclos}Ciclos_{nombreMetodo}_{nombreElitismo}.xlsx'
+    metodo_corto = 'R' if metodo_seleccion == 'r' else 'T'
+    elitismo_corto = 'E' if elitismo_Bool == 1 else ''
+    nombre_hoja = f'{nombreCantidadCiclos}C_{metodo_corto}_{elitismo_corto}'
+    if len(nombre_hoja) > 31:
+        nombre_hoja = nombre_hoja[:31]
 
     if os.path.exists(archivo_excel):
         os.remove(archivo_excel)
-        df_nuevo.to_excel(archivo_excel, index=False)
-    else:
-        df_nuevo.to_excel(archivo_excel, index=False)
-        
+    with pd.ExcelWriter(archivo_excel, engine='openpyxl') as writer:
+        df_nuevo.to_excel(writer, sheet_name=nombre_hoja, index=False)
+        worksheet = writer.sheets[nombre_hoja]
+        formatear_hoja_excel(worksheet)
+
 # GRAFICOS
 def generar_grafico(maximos, minimos, promedios, mejores, titulo, ciclo):
     x = list(range(len(maximos)))
 
-    fig, axs = plt.subplots(1, 3, figsize=(15, 4)) 
+    fig, ax = plt.subplots(figsize=(10, 6)) 
 
-    axs[0].plot(x, maximos, marker='o', linestyle='-', color='b', linewidth=0.7, markersize=2)
-    axs[0].set_title('Máximos')
-    axs[0].set_xlabel('CORRIDA')
-    axs[0].set_ylabel('APTITUD')
-    axs[0].set_ylim(0, 1.2)
-    axs[0].set_xlim(0, ciclo + 2)
-    axs[0].grid(True)
+    ax.plot(x, maximos, label = 'Máximos',  marker='o', linestyle='-', color='b', linewidth=1, markersize=2)
+    ax.plot(x, minimos, label = 'Mínimos', marker='o', linestyle='-', color='g', linewidth=1, markersize=2)
+    ax.plot(x, promedios, label = 'Promedios', marker='o', linestyle='-', color='r', linewidth=1, markersize=2)
 
-    axs[1].plot(x, minimos, marker='o', linestyle='-', color='g', linewidth=0.7, markersize=2)
-    axs[1].set_title('Mínimos')
-    axs[1].set_xlabel('CORRIDA')
-    axs[1].set_ylim(0, 1.2)
-    axs[1].set_xlim(0, ciclo + 2)
-    axs[1].grid(True)
+    ax.set_title('Máximos, Mínimos y Promedios')
+    ax.set_xlabel('CORRIDA',fontsize=12)
+    ax.set_ylabel('APTITUD',fontsize=12)
+    ax.set_ylim(0, 1.2)
+    ax.set_xlim(0, ciclo + 2)
+    ax.grid(True)
+    ax.legend(fontsize = 10)
 
-    axs[2].plot(x, promedios, marker='o', linestyle='-', color='r', linewidth=0.7, markersize=2)
-    axs[2].set_title('Promedios')
-    axs[2].set_xlabel('CORRIDA')
-    axs[2].set_ylim(0, 1.2)
-    axs[2].set_xlim(0, ciclo + 2)
-    axs[2].grid(True)
-
-    fig.suptitle(titulo, fontsize=14)
-    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    fig.suptitle(titulo, fontsize=15)
+    plt.tight_layout(rect = [0, 0, 1, 0.95])
+    plt.savefig(titulo.replace(" ", "_") + '.png')
     plt.show()
 
 # PROGRAMA PRINCIPAL
@@ -273,7 +297,6 @@ cantidadElitismo = 2
 cantidadCompetidores = int(cantidadIndividuos * 0.4)
 
 cantidadGenes = 30
-coef = (2 ** cantidadGenes) - 1
 maximosPorCiclo = []
 minimosPorCiclo = []
 promediosPorCiclo = []
@@ -290,16 +313,16 @@ ciclosPrograma = int(sys.argv[2])
 if int(sys.argv[6]) == 1:
     maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores = ciclos_con_elitismo(ciclosPrograma,probCrossover, probMutacion, cantidadIndividuos, cantidadGenes, sys.argv[4], cantidadElitismo=cantidadElitismo, cantidadCompetidores=cantidadCompetidores)
     if sys.argv[4] == 'r':
-        titulo = 'Seleccion RULETA ELITISTA - de '+ str(ciclosPrograma) + ' ciclos'
+        titulo = 'Selección RULETA ELITISTA - '+ str(ciclosPrograma) + ' ciclos'
     else:
-        titulo = 'Seleccion TORNEO ELITISTA - de '+ str(ciclosPrograma) + ' ciclos'
+        titulo = 'Selección TORNEO ELITISTA - '+ str(ciclosPrograma) + ' ciclos'
     generar_grafico(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, titulo, ciclosPrograma)
     crear_tabla(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, sys.argv[4], int(sys.argv[6]))
 else:
     maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores = ciclos_sin_elitismo(ciclosPrograma,probCrossover, probMutacion, cantidadIndividuos, cantidadGenes, sys.argv[4], cantidadCompetidores=cantidadCompetidores)
     if sys.argv[4] == 'r':
-        titulo = 'Seleccion RULETA - de '+ str(ciclosPrograma) + ' ciclos'
+        titulo = 'Selección RULETA - '+ str(ciclosPrograma) + ' ciclos'
     else:
-        titulo = 'Seleccion TORNEO - de '+ str(ciclosPrograma) + ' ciclos'
+        titulo = 'Selección TORNEO - '+ str(ciclosPrograma) + ' ciclos'
     generar_grafico(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, titulo, ciclosPrograma)
     crear_tabla(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, sys.argv[4], int(sys.argv[6]))
