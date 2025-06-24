@@ -3,7 +3,7 @@ import os
 import sys
 import matplotlib.pyplot as plt
 import pandas as pd
-# Utiliza openpyxl
+# Utiliza openpyxl tambien
 
 # GENERAL
 def aleatorio():
@@ -38,64 +38,63 @@ def calculadorEstadisticos(poblacion):
     max_objetivos = max(objetivos)
     min_objetivos = min(objetivos)
     mejor_cromosoma = poblacion[objetivos.index(max_objetivos)]
-    prom_objetivos = round((sum(objetivos)/len(objetivos)),4)
-    return [max_objetivos,min_objetivos, prom_objetivos, mejor_cromosoma]  
+    avg_objetivos = round((sum(objetivos)/len(objetivos)),4)
+    return [max_objetivos,min_objetivos, avg_objetivos, mejor_cromosoma]  
 
 def calculadorFitness(poblacion):
     fitness = []
-    objetivos = []
-    sumatoria = 0
 
     for individuo in poblacion: 
         decimal = binarioADecimal(individuo)
         obj = funcionObjetivo(decimal)
-        objetivos.append(obj)
-        sumatoria += obj
-
-    if sumatoria == 0:
-        print ('La suma de los valores es igual a cero.', poblacion)
-        exit()
-    
-    for i in range (len(poblacion)):
-        peso = objetivos[i]/sumatoria
-        fitness.append(round(peso,5))
+        fitness.append(obj)
+ 
     return fitness
 
 # Crossover
 def crossover1Punto(padre, madre):
-    puntoCorte = random.randint(1,len(padre)-1)
+    puntoCorte = random.randint(1, len(padre)-1)
     h1 = padre[:puntoCorte] + madre[puntoCorte:]
     h2 = madre[:puntoCorte] + padre[puntoCorte:]
     return h1, h2
 
 # Mutacion
-def mutacionInvertida(hijo):
-    cantGenes = len(hijo)
-    if cantGenes < 2:
-        return hijo  # No se puede invertir si hay menos de 2 genes
-    posInicial = random.randint(0, cantGenes - 2)
-    posFinal = random.randint(posInicial + 1, cantGenes - 1)
-    segmento = hijo[posInicial:posFinal + 1]
-    hijo[posInicial:posFinal + 1] = segmento[::-1]
-    return hijo
+def mutacionInvertida(poblacion, probabilidad):
+    for i in range(len(poblacion)):
+        if random.random() < probabilidad:
+            individuo = poblacion[i]
+            pos1 = random.randint(0, len(individuo) - 1)
+            pos2 = random.randint(0, len(individuo) - 1)
+            # Ordenar para que pos1 < pos2
+            if pos1 > pos2:
+                pos1, pos2 = pos2, pos1
+            segmento_invertido = individuo[pos1:pos2+1][::-1]
+            poblacion[i] = individuo[:pos1] + segmento_invertido + individuo[pos2+1:]
+    return poblacion
 
 # SELECCION
 # Ruleta
 def seleccionRuleta(poblacion, fitnessValores, cantidad):
-    arregloRuleta = []
-    seleccionados = []
+    total_fitness = sum(fitnessValores)
+    probabilidades = [f / total_fitness for f in fitnessValores]
 
-    for i in range(len(fitnessValores)):
-        fitnessValores[i] = fitnessValores[i]*100000
-        fitnessValores[i] = int(fitnessValores[i])
-        
-        for j in range(fitnessValores[i]):
-            arregloRuleta.append(poblacion[i]) 
-    for i in range (cantidad):
-            nro = random.randint(0,99999)
-            seleccionados.append(arregloRuleta[nro])
+    # Generar acumuladas
+    acumuladas = []
+    acum = 0
+    for p in probabilidades:
+        acum += p
+        acumuladas.append(acum)
+
+    seleccionados = []
+    for _ in range(cantidad):
+        r = random.random()
+        for i, limite in enumerate(acumuladas):
+            if r <= limite:
+                seleccionados.append(poblacion[i])
+                break
+
     return seleccionados
-        
+
 # Torneo
 def seleccionTorneo(poblacion, fitnessValores, cantidadIndividuos, cantidadCompetidores):
     ganadores = []
@@ -116,62 +115,65 @@ def seleccionTorneo(poblacion, fitnessValores, cantidadIndividuos, cantidadCompe
 
 # CICLOS
 # Elitismo
-def ciclos_con_elitismo(ciclos, prob_crossover, prob_mutacion,cantidadIndividuos, cantidadGenes, metodo_seleccion, cantidadElitismo, cantidadCompetidores=None):
+def ciclos_con_elitismo(ciclos, prob_crossover, prob_mutacion, cant_individuos, cant_genes, metodo_seleccion, cantidadElitismo, cantidadCompetidores=None):
     maximos=[]
     minimos=[]
     promedios=[]
     mejores=[]
     
-    pob = generarPoblacion(cantidadIndividuos,cantidadGenes)
+    pob = generarPoblacion(cant_individuos,cant_genes) #Poblacion inicial random
     fit = calculadorFitness(pob)
     rta = calculadorEstadisticos(pob)
 
     for j in range (ciclos):
-        
+        #De la poblacion me quedo con los de elite.
         elitistas = [] 
-        fitness_individuos = list(zip(fit, pob))
-        fitness_individuos.sort(key=lambda x: x[0], reverse=True)
-        
+        indices_elitistas = []
+        fit_ordenados = sorted(fit, reverse=True)
+
         for i in range(cantidadElitismo):
-            elitistas.append(fitness_individuos[i][1])
-        
-        pob_sin_elitistas = [ind for ind in pob if ind not in elitistas]
-        
-        if len(pob_sin_elitistas) < cantidadIndividuos - cantidadElitismo:
-            pob_sin_elitistas = pob
-        
-        fit_sin_elitistas = calculadorFitness(pob_sin_elitistas)
+            indice = fit.index(fit_ordenados[i])
+            elitistas.append(pob[indice])
+            indices_elitistas.append(indice)
+            fit[indice] = -1
+            pob[indice] = -1
+
+        indice = 0
+        borrados = 0
+        while  borrados < 2:
+            if fit[indice] == -1:
+                fit.pop(indice)
+                pob.pop(indice)
+                indice = 0
+                borrados = borrados + 1
+            else: indice = indice + 1
+        #elitistas contiene los i mejores individuos de pob
 
         if metodo_seleccion == 'r':
-            pob = seleccionRuleta(pob_sin_elitistas, fit_sin_elitistas, cantidadIndividuos-cantidadElitismo)
+            pob = seleccionRuleta(pob,fit,cant_individuos - cantidadElitismo) #selecciono una nueva poblacion con los individuos faltantes.
         else:
-            pob = seleccionTorneo(pob_sin_elitistas, fit_sin_elitistas, cantidadIndividuos-cantidadElitismo, cantidadCompetidores) 
-        
+            pob = seleccionTorneo(pob, fit, cant_individuos - cantidadElitismo, cantidadCompetidores) 
+
+        #REALIZO CROSSOVER Y MUTACION EN LA POBLACION
         for i in range (0,len(pob),2):
             padre = pob[i]
-            if i+1 < len(pob):  # Verificar que existe la madre
-                madre = pob[i+1]
-                if random.random() < prob_crossover :
-                    hijo1, hijo2 = crossover1Punto(padre,madre)
-                    pob[i], pob[i+1] = hijo1, hijo2
-                
-                if random.random() < prob_mutacion: 
-                    pob[i] = mutacionInvertida(pob[i])
-                if random.random() < prob_mutacion: 
-                    pob[i+1] = mutacionInvertida(pob[i+1])
-            else:
-                if random.random() < prob_mutacion: 
-                    pob[i] = mutacionInvertida(pob[i])
-
-        pob = elitistas + pob
+            madre = pob[i+1]
+            if random.random() < prob_crossover :
+                hijo1, hijo2 = crossover1Punto(padre,madre)
+                pob[i], pob[i+1] = hijo1, hijo2
+            
+        pob = mutacionInvertida(pob, prob_mutacion)
+        
+        pob = pob + elitistas
+        
         fit = calculadorFitness(pob)
         rta = calculadorEstadisticos(pob)
-        
+        #GUARDAR VALORES NECESARIOS PARA LA GRAFICA
         maximos.append(rta[0])
         minimos.append(rta[1])
         promedios.append(rta[2])
         mejores.append(rta[3])
-
+        
     return maximos, minimos, promedios, mejores
 
 # Sin elitismo
@@ -181,60 +183,44 @@ def ciclos_sin_elitismo(ciclos, prob_crossover, prob_mutacion, cantidadIndividuo
     promedios=[]
     mejores=[]
     
-    pob = generarPoblacion(cantidadIndividuos, cant_genes)
+    pob = generarPoblacion(cantidadIndividuos,cant_genes)
+    fit = calculadorFitness(pob)
+    rta = calculadorEstadisticos(pob)
+    
+    maximos.append(rta[0])
+    minimos.append(rta[1])
+    promedios.append(rta[2])
+    mejores.append(rta[3])
 
-    for j in range(ciclos):
+    for j in range (ciclos):
+        if metodo_seleccion == 'r':
+            pob = seleccionRuleta(pob,fit, cantidadIndividuos)
+        else:
+            pob = seleccionTorneo(pob, fit, cantidadIndividuos, cantidadCompetidores) 
+        for i in range (0,len(pob),2):
+            padre = pob[i]
+            madre = pob[i+1]
+            if random.random() < prob_crossover :
+                hijo1, hijo2 = crossover1Punto(padre,madre)
+                pob[i], pob[i+1] = hijo1, hijo2
+        pob = mutacionInvertida(pob, prob_mutacion)
         fit = calculadorFitness(pob)
         rta = calculadorEstadisticos(pob)
+        #GUARDAR VALORES NECESARIOS PARA LA GRAFICA
         maximos.append(rta[0])
         minimos.append(rta[1])
         promedios.append(rta[2])
         mejores.append(rta[3])
-
-        if metodo_seleccion == 'r':
-            pob = seleccionRuleta(pob, fit, cantidadIndividuos)
-        else:
-            pob = seleccionTorneo(pob, fit, cantidadIndividuos, cantidadCompetidores)
-
-        for i in range(0, len(pob), 2):
-            padre = pob[i]
-            madre = pob[i+1]
-            if random.random() < prob_crossover:
-                hijo1, hijo2 = crossover1Punto(padre, madre)
-                pob[i], pob[i+1] = hijo1, hijo2
-            if random.random() < prob_mutacion:
-                pob[i] = mutacionInvertida(pob[i])
-            if random.random() < prob_mutacion:
-                pob[i+1] = mutacionInvertida(pob[i+1])
-    
     return maximos, minimos, promedios, mejores
 
 # TABLAS EXCEL
-def formatear_hoja_excel(hoja_trabajo):
-    from openpyxl.styles import Font
-    
-    for columna in hoja_trabajo.columns:
-        longitud_maxima = 0
-        letra_columna = columna[0].column_letter
-        for celda in columna:
-            try:
-                if len(str(celda.value)) > longitud_maxima:
-                    longitud_maxima = len(str(celda.value))
-            except:
-                pass
-        ancho_ajustado = min(longitud_maxima + 2, 50)
-        hoja_trabajo.column_dimensions[letra_columna].width = ancho_ajustado
-    
-    for celda in hoja_trabajo[1]:
-        celda.font = Font(bold=True)
-
 def crear_tabla(maximos, minimos, promedios, mejores, metodo_seleccion, elitismo_Bool):
     cadenas = [''.join(str(num) for num in cromosoma) for cromosoma in mejores]
     decimales = [str(binarioADecimal(cromosoma)) for cromosoma in mejores]
 
     nombreMetodo = ''
     nombreElitismo = ''
-    nombreCantidadCiclos = str(len(maximos))
+    nombreCantidadCiclos = str(len(maximos)-1)
 
     if metodo_seleccion == 'r':
         nombreMetodo = '_Ruleta'
@@ -245,7 +231,7 @@ def crear_tabla(maximos, minimos, promedios, mejores, metodo_seleccion, elitismo
         nombreElitismo = '_Elitismo'
 
     df_nuevo = pd.DataFrame({
-        'Corrida': range(1, len(maximos) + 1),
+        'Corrida': range(len(maximos)),
         'Max': maximos,
         'Min': minimos,
         'AVG': promedios,
@@ -253,20 +239,14 @@ def crear_tabla(maximos, minimos, promedios, mejores, metodo_seleccion, elitismo
         'Mejor Cromosoma': cadenas,
     })
 
-    archivo_excel = f'VALORES_{nombreCantidadCiclos}Ciclos_{nombreMetodo}_{nombreElitismo}.xlsx'
-    metodo_corto = 'R' if metodo_seleccion == 'r' else 'T'
-    elitismo_corto = 'E' if elitismo_Bool == 1 else ''
-    nombre_hoja = f'{nombreCantidadCiclos}C_{metodo_corto}_{elitismo_corto}'
-    if len(nombre_hoja) > 31:
-        nombre_hoja = nombre_hoja[:31]
+    archivo_excel = 'VALORES_' + nombreCantidadCiclos + 'Ciclos' + nombreMetodo + nombreElitismo + '.xlsx'
 
     if os.path.exists(archivo_excel):
         os.remove(archivo_excel)
-    with pd.ExcelWriter(archivo_excel, engine='openpyxl') as writer:
-        df_nuevo.to_excel(writer, sheet_name=nombre_hoja, index=False)
-        worksheet = writer.sheets[nombre_hoja]
-        formatear_hoja_excel(worksheet)
-
+        df_nuevo.to_excel(archivo_excel, index=False)
+    else:
+        df_nuevo.to_excel(archivo_excel, index=False)
+        
 # GRAFICOS
 def generar_grafico(maximos, minimos, promedios, mejores, titulo, ciclo):
     x = list(range(len(maximos)))
@@ -290,6 +270,15 @@ def generar_grafico(maximos, minimos, promedios, mejores, titulo, ciclo):
     plt.savefig(titulo.replace(" ", "_") + '.png')
     plt.show()
 
+def verificar_maximo(datos):
+    for i in range(1, len(datos)):
+        if datos[i] < datos[i - 1]:
+            print(f"Dato menor encontrado en índice {i}: {datos[i]} < {datos[i - 1]}")
+            break
+    else:
+        print("Todos los datos son mayores o iguales a sus antecesores.")
+
+
 # PROGRAMA PRINCIPAL
 probCrossover = 0.75
 probMutacion = 0.05
@@ -298,6 +287,7 @@ cantidadElitismo = 2
 cantidadCompetidores = int(cantidadIndividuos * 0.4)
 
 cantidadGenes = 30
+coef = (2 ** cantidadGenes) - 1
 maximosPorCiclo = []
 minimosPorCiclo = []
 promediosPorCiclo = []
@@ -312,18 +302,20 @@ if int(sys.argv[2]) < 0 or (int(sys.argv[6]) != 0 and int(sys.argv[6]) != 1) or 
 ciclosPrograma = int(sys.argv[2])
 
 if int(sys.argv[6]) == 1:
-    maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores = ciclos_con_elitismo(ciclosPrograma,probCrossover, probMutacion, cantidadIndividuos, cantidadGenes, sys.argv[4], cantidadElitismo=cantidadElitismo, cantidadCompetidores=cantidadCompetidores)
+    maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores = ciclos_con_elitismo(ciclosPrograma,probCrossover, probMutacion, cantidadIndividuos, cantidadGenes, metodo_seleccion=sys.argv[4], cantidadElitismo=cantidadElitismo, cantidadCompetidores=cantidadCompetidores)
     if sys.argv[4] == 'r':
-        titulo = 'Selección RULETA ELITISTA - '+ str(ciclosPrograma) + ' ciclos'
+        titulo = 'Seleccion RULETA ELITISTA - de '+ str(ciclosPrograma) + ' ciclos'
     else:
-        titulo = 'Selección TORNEO ELITISTA - '+ str(ciclosPrograma) + ' ciclos'
+        titulo = 'Seleccion TORNEO ELITISTA - de '+ str(ciclosPrograma) + ' ciclos'
     generar_grafico(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, titulo, ciclosPrograma)
     crear_tabla(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, sys.argv[4], int(sys.argv[6]))
 else:
     maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores = ciclos_sin_elitismo(ciclosPrograma,probCrossover, probMutacion, cantidadIndividuos, cantidadGenes, sys.argv[4], cantidadCompetidores=cantidadCompetidores)
     if sys.argv[4] == 'r':
-        titulo = 'Selección RULETA - '+ str(ciclosPrograma) + ' ciclos'
+        titulo = 'Seleccion RULETA - de '+ str(ciclosPrograma) + ' ciclos'
     else:
-        titulo = 'Selección TORNEO - '+ str(ciclosPrograma) + ' ciclos'
+        titulo = 'Seleccion TORNEO - de '+ str(ciclosPrograma) + ' ciclos'
     generar_grafico(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, titulo, ciclosPrograma)
     crear_tabla(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, sys.argv[4], int(sys.argv[6]))
+
+verificar_maximo(maximosPorCiclo)
