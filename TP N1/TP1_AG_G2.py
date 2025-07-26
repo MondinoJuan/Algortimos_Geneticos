@@ -150,7 +150,7 @@ def ciclos_con_elitismo(ciclos, prob_crossover, prob_mutacion, cant_individuos, 
         #elitistas contiene los i mejores individuos de pob
 
         if metodo_seleccion == 'r':
-            pob = seleccionRuleta(pob,fit,cant_individuos - cantidadElitismo) #selecciono una nueva poblacion con los individuos faltantes.
+            pob = seleccionRuleta(pob, fit, cant_individuos - cantidadElitismo) #selecciono una nueva poblacion con los individuos faltantes.
         else:
             pob = seleccionTorneo(pob, fit, cant_individuos - cantidadElitismo, cantidadCompetidores) 
 
