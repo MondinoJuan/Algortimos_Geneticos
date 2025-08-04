@@ -13,7 +13,26 @@ def obtener_capacidades_wms_inta():
         "https://geointa.inta.gob.ar/geoserver/wms",
         "https://geo.inta.gob.ar/geoserver/wms",
         "https://ideg.inta.gob.ar/geoserver/wms",
-        "https://sig.inta.gob.ar/geoserver/wms"
+        "https://sig.inta.gob.ar/geoserver/wms",
+
+        "https://geointa.inta.gob.ar/geoserver/wms",
+        "https://visor.geointa.inta.gob.ar/geoserver/wms",
+        "http://www.geointa.inta.gob.ar/",
+        "https://geo.inta.gob.ar/",
+        "https://geo.inta.gob.ar/api/",
+        "https://geonode.senasa.gob.ar/geoserver/wms",
+        "https://geonode.senasa.gob.ar/services/",
+        "https://datos.gob.ar/api/3/",
+        "https://datos.gob.ar/dataset?organization=agroindustria",
+        "https://sisinta.inta.gob.ar/api/",
+        "https://suelos.inta.gob.ar/api/",
+        "https://ide.ign.gob.ar/geoserver/wms",
+        "https://wms.ign.gob.ar/geoserver/wms",
+        "https://geoserver.eeasalta.inta.gob.ar/geoserver/wms",
+        "https://geoserver.parana.inta.gob.ar/geoserver/wms",
+        "https://geointa.inta.gob.ar/geoserver/wfs",
+        "https://geointa.inta.gob.ar/geoserver/wms?service=WMS&request=GetCapabilities",
+        "https://datos.gob.ar/api/3/action/package_search?q=suelos"
     ]
     
     for url_base in servicios_wms:
