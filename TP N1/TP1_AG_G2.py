@@ -15,7 +15,7 @@ def completoCromosoma(cantidad):
 
 def generarPoblacion(cantidadCromosomas, cantidadGenes):
     poblacion = []
-    for i in range(cantidadCromosomas):
+    for _ in range(cantidadCromosomas):
         cromosoma = completoCromosoma(cantidadGenes)
         poblacion.append(cromosoma)
     return poblacion
@@ -33,23 +33,28 @@ def funcionObjetivo(x):
     coef = (2 ** 30) - 1
     return (x / coef) ** 2  
 
-def calculadorEstadisticos(poblacion):
-    objetivos = [funcionObjetivo(binarioADecimal(ind)) for ind in poblacion]
+def calculadorFuncionObjetivo(poblacion):
+    objetivos = []
+    for individuo in poblacion:
+        decimal = binarioADecimal(individuo)
+        obj = funcionObjetivo(decimal)
+        objetivos.append(obj)
+    return objetivos
+
+def calculadorFitness(objetivos):
+    fitness = []
+    suma = sum(objetivos)
+    for fo in objetivos:
+        fit = fo / suma
+        fitness.append(fit)
+    return fitness
+
+def calculadorEstadisticos(poblacion, objetivos):
     max_objetivos = max(objetivos)
     min_objetivos = min(objetivos)
     mejor_cromosoma = poblacion[objetivos.index(max_objetivos)]
     avg_objetivos = round((sum(objetivos)/len(objetivos)),4)
-    return [max_objetivos,min_objetivos, avg_objetivos, mejor_cromosoma]  
-
-def calculadorFitness(poblacion):
-    fitness = []
-
-    for individuo in poblacion: 
-        decimal = binarioADecimal(individuo)
-        obj = funcionObjetivo(decimal)
-        fitness.append(obj)
- 
-    return fitness
+    return [max_objetivos,min_objetivos, avg_objetivos, mejor_cromosoma] 
 
 # Crossover
 def crossover1Punto(padre, madre):
@@ -59,9 +64,9 @@ def crossover1Punto(padre, madre):
     return h1, h2
 
 # Mutacion
-def mutacionInvertida(poblacion, probabilidad):
+def mutacionInvertida(poblacion, probMutacion):
     for i in range(len(poblacion)):
-        if random.random() < probabilidad:
+        if random.random() < probMutacion:
             individuo = poblacion[i]
             pos1 = random.randint(0, len(individuo) - 1)
             pos2 = random.randint(0, len(individuo) - 1)
@@ -75,42 +80,33 @@ def mutacionInvertida(poblacion, probabilidad):
 # SELECCION
 # Ruleta
 def seleccionRuleta(poblacion, fitnessValores, cantidad):
-    total_fitness = sum(fitnessValores)
-    probabilidades = [f / total_fitness for f in fitnessValores]
-
     # Generar acumuladas
     acumuladas = []
     acum = 0
-    for p in probabilidades:
-        acum += p
+    for fit in fitnessValores:
+        acum += fit
         acumuladas.append(acum)
-
     seleccionados = []
     for _ in range(cantidad):
-        r = random.random()
-        for i, limite in enumerate(acumuladas):
-            if r <= limite:
+        probAleatoria = random.random()
+        for i, acum in enumerate(acumuladas):
+            if probAleatoria <= acum:
                 seleccionados.append(poblacion[i])
                 break
-
     return seleccionados
 
 # Torneo
 def seleccionTorneo(poblacion, fitnessValores, cantidadIndividuos, cantidadCompetidores):
     ganadores = []
-
     for j in range(cantidadIndividuos):
         competidores = []
         fitness_competidores = []
-
         for i in range(cantidadCompetidores):
-            c=random.randint(0,len(poblacion)-1)
-            competidores.append(poblacion[c])
-            fitness_competidores.append(fitnessValores[c])
-
+            indice = random.randint(0, len(poblacion)-1)
+            competidores.append(poblacion[indice])
+            fitness_competidores.append(fitnessValores[indice])
         ganador = competidores[fitness_competidores.index(max(fitness_competidores))]
-        ganadores.append(ganador)    
-    
+        ganadores.append(ganador)
     return ganadores
 
 # CICLOS
@@ -121,53 +117,45 @@ def ciclos_con_elitismo(ciclos, prob_crossover, prob_mutacion, cant_individuos, 
     promedios=[]
     mejores=[]
     
-    pob = generarPoblacion(cant_individuos,cant_genes) #Poblacion inicial random
-    fit = calculadorFitness(pob)
-    rta = calculadorEstadisticos(pob)
+    pob = generarPoblacion(cantidadIndividuos,cant_genes) #Poblacion inicial random
+    fo = calculadorFuncionObjetivo(pob)
+    fit = calculadorFitness(fo)
+    rta = calculadorEstadisticos(pob, fo)
+
+    maximos.append(rta[0])
+    minimos.append(rta[1])
+    promedios.append(rta[2])
+    mejores.append(rta[3])
 
     for j in range (ciclos):
-        #De la poblacion me quedo con los de elite.
         elitistas = [] 
-        indices_elitistas = []
-        fit_ordenados = sorted(fit, reverse=True)
+        fit_ordenados = sorted(fit, reverse = True)
 
         for i in range(cantidadElitismo):
             indice = fit.index(fit_ordenados[i])
             elitistas.append(pob[indice])
-            indices_elitistas.append(indice)
-            fit[indice] = -1
-            pob[indice] = -1
-
-        indice = 0
-        borrados = 0
-        while  borrados < 2:
-            if fit[indice] == -1:
-                fit.pop(indice)
-                pob.pop(indice)
-                indice = 0
-                borrados = borrados + 1
-            else: indice = indice + 1
-        #elitistas contiene los i mejores individuos de pob
 
         if metodo_seleccion == 'r':
-            pob = seleccionRuleta(pob, fit, cant_individuos - cantidadElitismo) #selecciono una nueva poblacion con los individuos faltantes.
+            pob_intermedia = seleccionRuleta(pob, fit, cant_individuos - cantidadElitismo)
         else:
-            pob = seleccionTorneo(pob, fit, cant_individuos - cantidadElitismo, cantidadCompetidores) 
+            pob_intermedia = seleccionTorneo(pob, fit, cant_individuos - cantidadElitismo, cantidadCompetidores) 
+        #print(len(pob_intermedia))
 
         #REALIZO CROSSOVER Y MUTACION EN LA POBLACION
-        for i in range (0,len(pob),2):
-            padre = pob[i]
-            madre = pob[i+1]
+        for i in range (0,len(pob_intermedia),2):
+            padre = pob_intermedia[i]
+            madre = pob_intermedia[i+1]
             if random.random() < prob_crossover :
                 hijo1, hijo2 = crossover1Punto(padre,madre)
-                pob[i], pob[i+1] = hijo1, hijo2
+                pob_intermedia[i], pob_intermedia[i+1] = hijo1, hijo2
             
-        pob = mutacionInvertida(pob, prob_mutacion)
+        pob_intermedia = mutacionInvertida(pob_intermedia, prob_mutacion)
         
-        pob = pob + elitistas
+        pob = pob_intermedia + elitistas
         
-        fit = calculadorFitness(pob)
-        rta = calculadorEstadisticos(pob)
+        fo = calculadorFuncionObjetivo(pob)
+        fit = calculadorFitness(fo)
+        rta = calculadorEstadisticos(pob, fo)
         #GUARDAR VALORES NECESARIOS PARA LA GRAFICA
         maximos.append(rta[0])
         minimos.append(rta[1])
@@ -184,8 +172,9 @@ def ciclos_sin_elitismo(ciclos, prob_crossover, prob_mutacion, cantidadIndividuo
     mejores=[]
     
     pob = generarPoblacion(cantidadIndividuos,cant_genes)
-    fit = calculadorFitness(pob)
-    rta = calculadorEstadisticos(pob)
+    fo = calculadorFuncionObjetivo(pob)
+    fit = calculadorFitness(fo)
+    rta = calculadorEstadisticos(pob, fo)
     
     maximos.append(rta[0])
     minimos.append(rta[1])
@@ -194,18 +183,21 @@ def ciclos_sin_elitismo(ciclos, prob_crossover, prob_mutacion, cantidadIndividuo
 
     for j in range (ciclos):
         if metodo_seleccion == 'r':
-            pob = seleccionRuleta(pob,fit, cantidadIndividuos)
+            pob = seleccionRuleta(pob, fit, cantidadIndividuos)
         else:
             pob = seleccionTorneo(pob, fit, cantidadIndividuos, cantidadCompetidores) 
         for i in range (0,len(pob),2):
-            padre = pob[i]
-            madre = pob[i+1]
+            if i + 1 < len(pob):
+                padre = pob[i]
+                madre = pob[i+1]
             if random.random() < prob_crossover :
                 hijo1, hijo2 = crossover1Punto(padre,madre)
                 pob[i], pob[i+1] = hijo1, hijo2
         pob = mutacionInvertida(pob, prob_mutacion)
-        fit = calculadorFitness(pob)
-        rta = calculadorEstadisticos(pob)
+        fo = calculadorFuncionObjetivo(pob)
+        fit = calculadorFitness(fo)
+        rta = calculadorEstadisticos(pob, fo)
+
         #GUARDAR VALORES NECESARIOS PARA LA GRAFICA
         maximos.append(rta[0])
         minimos.append(rta[1])
@@ -246,7 +238,7 @@ def crear_tabla(maximos, minimos, promedios, mejores, metodo_seleccion, elitismo
         df_nuevo.to_excel(archivo_excel, index=False)
     else:
         df_nuevo.to_excel(archivo_excel, index=False)
-        
+
 # GRAFICOS
 def generar_grafico(maximos, minimos, promedios, mejores, titulo, ciclo):
     x = list(range(len(maximos)))

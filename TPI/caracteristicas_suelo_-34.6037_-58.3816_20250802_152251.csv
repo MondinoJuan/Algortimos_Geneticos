@@ -1,4 +1,0 @@
-fuente,capa,tipo_consulta,distancia_km,tiene_informacion,num_propiedades,coordenadas
-INDEC,aglomerados_eph,punto_exacto,0,Sí,0,"-34.6037, -58.3816"
-INDEC,aglomerados_eph_4326,punto_exacto,0,Sí,0,"-34.6037, -58.3816"
-INDEC,entidades_eph,punto_exacto,0,Sí,0,"-34.6037, -58.3816"
