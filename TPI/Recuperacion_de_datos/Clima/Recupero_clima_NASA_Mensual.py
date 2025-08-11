@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 #import time
 
-def obtener_datos_nasa_power(lat, lon, años_atras=15):
+def obtener_datos_nasa_power(lat, lon, años_atras=100):
     """
     Obtiene datos climáticos de NASA POWER para agricultura.
     
@@ -197,126 +197,25 @@ def procesar_datos_mensuales(df):
     
     return datos_mensuales
 
-def obtener_datos_nasa_mensual_directo(lat, lon, años_atras=15):
-    """
-    Versión alternativa que obtiene datos mensuales directamente de la API
-    """
-    fecha_actual = datetime.now()
-    fecha_inicio = fecha_actual - timedelta(days=años_atras * 365)
-    
-    # Formatear fechas para datos mensuales (YYYYMM)
-    start_date = fecha_inicio.strftime('%Y%m')
-    end_date = fecha_actual.strftime('%Y%m')
-    
-    variables = "T2M,RH2M,WS2M,PRECTOTCORR"
-    
-    base_url = "https://power.larc.nasa.gov/api/temporal/monthly/point"
-    
-    params = {
-        'parameters': variables,
-        'community': 'AG',
-        'longitude': lon,
-        'latitude': lat,
-        'start': start_date,
-        'end': end_date,
-        'format': 'JSON'
-    }
-    
-    print(f"Obteniendo datos mensuales directos de NASA POWER...")
-    
-    try:
-        response = requests.get(base_url, params=params, timeout=60)
-        
-        if response.status_code == 200:
-            data = response.json()
-            
-            if 'properties' not in data or 'parameter' not in data['properties']:
-                print("Error: Estructura de datos inesperada en la respuesta mensual")
-                return crear_dataframe_vacio()
-            
-            parametros = data['properties']['parameter']
-            
-            # Procesar fechas mensuales
-            fechas = list(parametros['T2M'].keys()) if 'T2M' in parametros else []
-            
-            if not fechas:
-                print("Error: No se encontraron datos mensuales en la respuesta")
-                return crear_dataframe_vacio()
-            
-            fechas_dt = []
-            temperaturas = []
-            humedades = []
-            vientos = []
-            precipitaciones = []
-            
-            for fecha in fechas:
-                try:
-                    fecha_dt = datetime.strptime(fecha, '%Y%m')
-                    fechas_dt.append(fecha_dt)
-                    
-                    # Obtener valores y manejar -999 (datos faltantes)
-                    temp = parametros.get('T2M', {}).get(fecha, None)
-                    hum = parametros.get('RH2M', {}).get(fecha, None)
-                    viento = parametros.get('WS2M', {}).get(fecha, None)
-                    precip = parametros.get('PRECTOTCORR', {}).get(fecha, None)
-                    
-                    # Convertir -999 a None
-                    temp = None if temp == -999 else temp
-                    hum = None if hum == -999 else hum
-                    viento = None if viento == -999 else viento
-                    precip = None if precip == -999 else precip
-                    
-                    temperaturas.append(temp)
-                    humedades.append(hum)
-                    vientos.append(viento)
-                    precipitaciones.append(precip)
-                    
-                except ValueError as e:
-                    print(f"Error procesando fecha mensual {fecha}: {e}")
-                    continue
-            
-            df = pd.DataFrame({
-                'fecha': fechas_dt,
-                'temperatura_media_C': temperaturas,
-                'humedad_relativa_%': humedades,
-                'velocidad_viento_m_s': vientos,
-                'precipitacion_mm_mes': precipitaciones
-            })
-            
-            df['velocidad_viento_km_h'] = df['velocidad_viento_m_s'] * 3.6
-            
-            print(f"✅ Datos mensuales directos obtenidos: {len(df)} registros")
-            return df
-            
-        else:
-            print(f"Error {response.status_code}: {response.text}")
-            return crear_dataframe_vacio()
-            
-    except Exception as e:
-        print(f"Error obteniendo datos mensuales directos: {e}")
-        return crear_dataframe_vacio()
-
 # Ejemplo de uso
 if __name__ == "__main__":
     # Coordenadas de ejemplo (Córdoba, Argentina)
     latitud = -31.4
     longitud = -64.2
+    años_atras = 44
     
     print("=== OBTENIENDO DATOS DIARIOS Y PROCESANDO MENSUALMENTE ===")
     # Obtener datos diarios
-    df_clima_diario = obtener_datos_nasa_power(latitud, longitud, años_atras=15)
+    df_clima_diario = obtener_datos_nasa_power(latitud, longitud, años_atras)
     
     if not df_clima_diario.empty:
         # Procesar a datos mensuales
         df_clima = procesar_datos_mensuales(df_clima_diario)
         print(f"✅ Datos diarios procesados a {len(df_clima)} registros mensuales")
-    else:
-        print("\n=== INTENTANDO DATOS MENSUALES DIRECTOS ===")
-        df_clima = obtener_datos_nasa_mensual_directo(latitud, longitud, años_atras=15)
     
     if not df_clima.empty:
         # Guardar en CSV
-        output_path = "clima_nasa_mensual_15_anios.csv"
+        output_path = f"Recuperacion_de_datos/Clima/clima_nasa_mensual_{años_atras}_anios.csv"
         df_clima.to_csv(output_path, index=False)
         
         print(f"\n✅ Datos mensuales guardados en: {output_path}")
@@ -337,8 +236,7 @@ if __name__ == "__main__":
         # Mostrar información sobre el procesamiento
         if 'precipitacion_mm_mes' in df_clima.columns:
             print(f"\nPrecipitación promedio mensual: {df_clima['precipitacion_mm_mes'].mean():.2f} mm")
-            print(f"Temperatura promedio: {df_clima['temperatura_media_C'].mean():.2f}°C")
-        
+            print(f"Temperatura promedio: {df_clima['temperatura_media_C'].mean():.2f}°C")     
     else:
         print("\n❌ No se pudieron obtener datos de NASA POWER")
         print("Verifica las coordenadas y la conexión a internet")
