@@ -5,7 +5,7 @@ import geopandas as gpd
 from shapely.geometry import shape
 
 geojson = """
-{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-64.337324,-33.142681],[-64.336681,-33.142834],[-64.336981,-33.143355],[-64.337625,-33.14322],[-64.337324,-33.142681]]]}}
+{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-60.274,-33.33763],[-60.272713,-33.336268],[-60.274858,-33.334905],[-60.275888,-33.335909],[-60.274,-33.33763]]]}}
 """
 geojson_dict = json.loads(geojson)
 
@@ -16,7 +16,7 @@ mi_poligono = shape(geojson_dict["geometry"])
 poligono_gdf = gpd.GeoDataFrame(index=[0], geometry=[mi_poligono], crs="EPSG:4326")
 
 # Leer los departamentos desde el shapefile del IGN
-departamentos = gpd.read_file("GIS Nuevo/departamentoPolygon.shp")
+departamentos = gpd.read_file("C:\\Users\\Admin\\Desktop\\Estudios\\Sistemas-2025\\Algortimos_Geneticos\\TPI\\Mapa\\GIS Nuevo\\departamentoPolygon.shp")
 
 # Asegurarse que ambos estén en el mismo sistema de coordenadas (WGS84 - EPSG:4326)
 departamentos = departamentos.to_crs(epsg=4326)
