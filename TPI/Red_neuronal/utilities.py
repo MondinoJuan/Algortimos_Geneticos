@@ -95,29 +95,7 @@ def suelo_for_coordinates(latitud, longitud, max_distance=None):
 
 # Recupero los datos de semillas y producción histórica a partir de un departamento.
 # ---------------------------------------------------------------------------------------------------------------------
-def seeds_for_department(department_name, seed_name):
-
-    # Cargar datos de semillas me aseguro de tener el archivo correspondiente creado.
-    match seed_name:
-        case 'avena':
-            recupero_datos_avena()
-        case 'cebada':
-            recupero_datos_cebada()
-        case 'centeno':
-            recupero_datos_centeno()
-        case 'girasol':
-            recupero_datos_girasol()
-        case 'maiz':
-            recupero_datos_maiz()
-        case 'mani':
-            recupero_datos_mani()
-        case 'mijo':
-            recupero_datos_mijo()
-        case 'soja':
-            recupero_datos_soja()
-        case 'trigo':
-            recupero_datos_trigo()
-        
+def seeds_for_department(department_name, seed_name):        
 
     seed = pd.read_csv(f'Recuperacion_de_datos/Semillas/Archivos generados/{seed_name}_recuperado.csv', encoding='latin1')
 

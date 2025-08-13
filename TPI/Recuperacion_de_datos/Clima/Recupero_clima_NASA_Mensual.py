@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 #import time
 
-def obtener_datos_nasa_power(lat, lon, años_atras=100):
+def obtener_datos_nasa_power(lat, lon, años_atras=44):
     """
     Obtiene datos climáticos de NASA POWER para agricultura.
     

@@ -1,4 +1,4 @@
-cultivo_nombre,anio,campania,provincia_nombre,provincia_id,departamento_nombre,departamento_id,superficie_sembrada_ha,superficie_cosechada_ha,produccion_tm,rendimiento_kgxha
+cultivo_nombre,anio,campania,provincia_nombre,provincia_id,departamento_nombre,departamento_id,superficie_sembrada_ha,superficie_cosechada_ha,produccion_tn,rendimiento_kgxha
 soja,1941,1941/1942,Misiones,54,Cainguás,54014,300,200,140,700
 soja,1941,1941/1942,Misiones,54,Candelaria,54021,100,100,100,1000
 soja,1941,1941/1942,Misiones,54,Iguazú,54063,70,70,56,800

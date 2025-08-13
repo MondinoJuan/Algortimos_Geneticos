@@ -1,4 +1,4 @@
-cultivo_nombre,anio,campania,provincia_nombre,provincia_id,departamento_nombre,departamento_id,superficie_sembrada_ha,superficie_cosechada_ha,produccion_tm,rendimiento_kgxha
+cultivo_nombre,anio,campania,provincia_nombre,provincia_id,departamento_nombre,departamento_id,superficie_sembrada_ha,superficie_cosechada_ha,produccion_tn,rendimiento_kgxha
 cebada,1938,1938/1939,Buenos Aires,06,25 de Mayo,06854,3500,2800,3852,1376
 cebada,1938,1938/1939,Buenos Aires,06,9 de Julio,06588,2000,1600,1968,1230
 cebada,1938,1938/1939,Buenos Aires,06,Adolfo Alsina,06007,50000,38000,22800,600

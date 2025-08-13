@@ -1,4 +1,4 @@
-cultivo_nombre,anio,campania,provincia_nombre,provincia_id,departamento_nombre,departamento_id,superficie_sembrada_ha,superficie_cosechada_ha,produccion_tm,rendimiento_kgxha
+cultivo_nombre,anio,campania,provincia_nombre,provincia_id,departamento_nombre,departamento_id,superficie_sembrada_ha,superficie_cosechada_ha,produccion_tn,rendimiento_kgxha
 girasol,1969,1969/70,Buenos Aires,06,25 de Mayo,06854,30000,30000,22500,750
 girasol,1969,1969/70,Buenos Aires,06,9 de Julio,06588,50000,50000,41316,826
 girasol,1969,1969/70,Buenos Aires,06,Adolfo Alsina,06007,10000,10000,9000,900
