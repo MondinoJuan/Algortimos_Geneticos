@@ -71,9 +71,9 @@ def build_lstm_model(input_shape):
 # -----------------------------
 # EJEMPLO DE ENTRENAMIENTO
 # -----------------------------
-# climate_df = pd.read_csv('clima.csv')  # Filtrado por vos
-# soil_df = pd.read_csv('suelo.csv')     # Filtrado por vos
-# seed_info_df = pd.read_csv('semillas.csv') # Filtrado por vos
+# climate_df = pd.read_csv('clima.csv')  
+# soil_df = pd.read_csv('suelo.csv')     
+# seed_info_df = pd.read_csv('semillas.csv') 
 
 # X, y, sc_climate, sc_soil = prepare_dataset(climate_df, soil_df, seed_info_df)
 # model = build_lstm_model((SEQUENCE_LENGTH, X.shape[2]))

@@ -16,11 +16,11 @@ def recupero_datos_suelo():
     # Hacer un join (merge) usando site_id
     merged = pd.merge(sites_collums, layers_collums, on='profile_identifier', how='inner')
 
-    merged_collums = merged[['latitude', 'longitude', 'country_code', 'bulk_density', 'ca_co3', 'coarse_fragments', 
+    merged_collums = merged[['latitude', 'longitude', 'bulk_density', 'ca_co3', 'coarse_fragments', 
                             'ecec', 'conductivity', 'organic_carbon', 'ph', 'clay', 'silt', 'sand', 'water_retention']]
 
-    # Mostrar resultado
     print(merged_collums.head())
 
-    # Guardar si querés
     merged_collums.to_csv('Recuperacion_de_datos/Suelos/suelo_unido.csv', index=False)
+
+recupero_datos_suelo()
