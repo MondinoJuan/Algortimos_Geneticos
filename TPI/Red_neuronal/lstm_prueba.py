@@ -83,4 +83,58 @@ df_combino_semillas_suelo = pd.merge(df_semillas_filtrado, df_suelo_promedio, on
 df_combino_semillas_suelo = df_combino_semillas_suelo.sort_values(by='anio').reset_index(drop=True)
 
 
+'''
+A df_combino_semillas_suelo le agrego las columnas temperatura_media_C, humedad_relativa_%, velocidad_viento_m_s, velocidad_viento_km_h, 
+precipitacion_mm_mes con los datos recuperados del archivo "clima_nasa_mensual_44_anios.csv, cada fila de las columnas tendrá un arreglo 
+de tamaño n que tenga los datos correspondiente a esa columna de los ultimos n meses previos al año que se lee en la columna anio de 
+df_combino_semillas_suelo
+'''
+
+def agregar_datos_climaticos1(df_combino, df_clima, n_meses):
+    for mes in range(1, n_meses + 1):
+        col_name = f'mes_{mes}'
+        df_combino[col_name] = df_combino['anio'].apply(
+            lambda x: df_clima[df_clima['fecha'].dt.year == x - 1][
+                ['fecha', 'temperatura_media_C', 'humedad_relativa_%', 'velocidad_viento_m_s', 'velocidad_viento_km_h', 'precipitacion_mm_mes']
+            ].tail(mes).values.tolist()
+        )
+    return df_combino
+
+def agregar_datos_climaticos2(df_combino, df_clima, n_meses):
+    df_clima = df_clima.sort_values('fecha')
+
+    for variable in ['temperatura_media_C','humedad_relativa_%',
+                     'velocidad_viento_m_s','velocidad_viento_km_h',
+                     'precipitacion_mm_mes']:
+
+        df_combino[variable] = df_combino['anio'].apply(
+            lambda anio: df_clima[df_clima['fecha'].dt.year < anio][variable]
+                          .tail(n_meses)
+                          .tolist()
+        )
+    return df_combino
+
+n_meses = 18
+
+df_combino_semillas_suelo_clima = agregar_datos_climaticos1(df_combino_semillas_suelo, df_clima, n_meses)
+df_combino_semillas_suelo_clima = agregar_datos_climaticos2(df_combino_semillas_suelo, df_clima, n_meses)
+
+pd.to_csv(df_combino_semillas_suelo_clima, 'Red_neuronal/df_completo_para_RN_lstm.csv', index=False)
+
+
+
+# Reordeno las columnas del archivo para que los datos de entrada queden al principio y los de salida (la produccion obtenida) al final
+# Completar cuando se obtenga el archivo df_completo_para_RN_lstm.csv
+
+
+
+
+# ---------------------------------------------
+# ENTRENAMIENTO DEL MODELO
+# Se utilizará el 80% de los datos para entrenar y el 20% para validar
+# ---------------------------------------------
+# Cargo el archivo con todos los datos necesarios
+df_completo = pd.read_csv('Red_neuronal/df_completo_para_RN_lstm.csv')
+
+# Selecciono las columnas que voy a usar como datos de entrada y salida
 
