@@ -10,6 +10,7 @@ import requests
 #import threading
 import time
 #from geopy.distance import geodesic
+from departamento import encontrar_departamento
 
 class MapApp:
     def __init__(self):
@@ -289,8 +290,9 @@ class MapApp:
             centro_lon = sum(coord[1] for coord in self.coordenadas) / len(self.coordenadas)
             
             # Obtener departamento y provincia
-            self.departamento, self.provincia = self.obtener_ubicacion(centro_lat, centro_lon)
-            
+            #self.departamento, self.provincia = self.obtener_ubicacion(centro_lat, centro_lon)
+            self.departamento, self.provincia = encontrar_departamento(self.coordenadas)
+
             # Actualizar interfaz
             self.update_results()
             
