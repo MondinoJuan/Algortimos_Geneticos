@@ -57,16 +57,19 @@ def obtener_precios_por_tonelada():
             if len(precios) >= 2:
                 precio = float(precios_mani[0].text.strip().replace('$', '').replace('.', '').replace(',','.'))
 
-    precios.append([fecha, 'Mani', precio])
+    precios.append([fecha, 'mani', precio])
 
     return precios
 
-def recuperar_precios(lista:list=[]):
+def recuperar_precios(lista:list=[], fecha=datetime.now().date()):
     with open("Recuperacion de datos/Semillas/Archivos generados/precios_por_tonelada.csv", newline='', encoding="utf-8") as datos_precios:
         data = csv.reader(datos_precios)
         encabezado = next(data, None)
         datos_hoy = [fila for fila in data 
-                     if datetime.strptime(fila[0], '%Y-%m-%d').date() == datetime.now().date()]
+                     if datetime.strptime(fila[0], '%Y-%m-%d').date() == fecha]
+
+    if not datos_hoy and fecha != datetime.now().date():
+        print("No se encontraron datos para esa fecha.")
 
     if not datos_hoy:
         datos_hoy = obtener_precios_por_tonelada()
