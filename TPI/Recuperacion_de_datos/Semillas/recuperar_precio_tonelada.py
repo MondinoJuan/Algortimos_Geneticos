@@ -18,6 +18,8 @@ def obtener_precios_por_tonelada():
 
     precios = []
 
+    otros_cultivos = ['Maní Runner']
+
     # Obtiene los <p> del div.tab_content > p
     for p in soup.select("div.tab_content > p"):
         cultivo = p.get_text(strip=True).replace('Ã­', 'i').replace(' ', '').lower()
@@ -42,27 +44,30 @@ def obtener_precios_por_tonelada():
                 precio = int(celdas_usd[2]) * precio_dolar
             else: precio = 0
 
-            precios.append([fecha, cultivo, precio])
+            if precio == 0:
+                otros_cultivos.append(cultivo)
+            else:
+                precios.append([fecha, cultivo, precio])
 
     url = "https://www.bccba.org.ar/todas-las-pizzarras/"
     r = requests.get(url, headers=headers)
     soup = BeautifulSoup(r.text, "html.parser")
 
     cards = soup.find_all("div", class_="pizarra-card")
-
-    for card in cards:
-        titulo = card.find("p", class_="pizarra-titulo")
-        if titulo and "Mani Runner" in titulo.text:
-            precios_mani = card.find_all("p", class_="pizarra-precio")
-            if len(precios) >= 2:
-                precio = float(precios_mani[0].text.strip().replace('$', '').replace('.', '').replace(',','.'))
-
-    precios.append([fecha, 'mani', precio])
+    for cultivo in otros_cultivos:
+        for card in cards:
+            titulo = card.find("p", class_="pizarra-titulo")
+            if titulo and cultivo.upper() in titulo.text.upper():
+                precios_cultivo = card.find_all("p", class_="pizarra-precio")
+                if len(precios) >= 2:
+                    precio = int(float(precios_cultivo[0].text.strip().replace('$', '').replace('.', '').replace(',','.')))
+                break
+        precios.append([fecha, cultivo, precio])
 
     return precios
 
 def recuperar_precios(lista:list=[], fecha=datetime.now().date()):
-    with open("Recuperacion de datos/Semillas/Archivos generados/precios_por_tonelada.csv", newline='', encoding="utf-8") as datos_precios:
+    with open("Recuperacion_de_datos/Semillas/Archivos generados/precios_por_tonelada.csv", newline='', encoding="utf-8") as datos_precios:
         data = csv.reader(datos_precios)
         encabezado = next(data, None)
         datos_hoy = [fila for fila in data 
@@ -73,7 +78,7 @@ def recuperar_precios(lista:list=[], fecha=datetime.now().date()):
 
     if not datos_hoy:
         datos_hoy = obtener_precios_por_tonelada()
-        with open("Recuperacion de datos/Semillas/Archivos generados/precios_por_tonelada.csv", 'w', newline='', encoding="utf-8") as datos_precios:
+        with open("Recuperacion_de_datos/Semillas/Archivos generados/precios_por_tonelada.csv", 'w', newline='', encoding="utf-8") as datos_precios:
             writer = csv.writer(datos_precios)
             writer.writerows(datos_hoy)
 
