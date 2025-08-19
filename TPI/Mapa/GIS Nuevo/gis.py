@@ -7,7 +7,8 @@ import os
 import json
 import math
 import requests
-#import threading
+import threading
+from flask import Flask, request, jsonify
 import time
 #from geopy.distance import geodesic
 from departamento import encontrar_departamento
@@ -23,6 +24,9 @@ class MapApp:
         self.area_m2 = 0
         self.departamento = ""
         self.provincia = ""
+        self.coords_recibidas = []
+        self._flask_thread = None
+
         
         # Crear interfaz
         self.create_interface()
@@ -72,7 +76,8 @@ class MapApp:
         # Botones de procesamiento
         button_frame1 = ttk.Frame(input_frame)
         button_frame1.grid(row=3, column=0, columnspan=2, pady=(10, 0))
-        
+        #ttk.Button(button_frame1, text="📥 Cargar desde mapa", 
+        #   command=self.load_from_map).pack(side=tk.LEFT, padx=(0, 10))
         ttk.Button(button_frame1, text="📊 Procesar Coordenadas", 
                   command=self.process_manual_coordinates).pack(side=tk.LEFT, padx=(0, 10))
         ttk.Button(button_frame1, text="🗑️ Limpiar", 
@@ -114,7 +119,7 @@ class MapApp:
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
         main_frame.columnconfigure(1, weight=1)
-        
+    
     def create_map(self):
         """Crear mapa con controles de dibujo mejorados"""
         # Centrar en Argentina
@@ -156,54 +161,48 @@ class MapApp:
                 <li>Haz clic en el mapa para crear puntos del polígono</li>
                 <li>Haz doble clic para terminar el polígono</li>
                 <li>Haz clic derecho sobre el polígono dibujado</li>
-                <li>Copia las coordenadas que aparecen</li>
+                <li>Se copiarán automáticamente las coordenadas al portapapeles</li>
                 <li>Pégalas en la aplicación Python</li>
             </ol>
         </div>
         """
-        
         m.get_root().html.add_child(folium.Element(instructions_html))
         
-        # Agregar script para mostrar coordenadas al hacer clic
+        # Script para mostrar solo la lista de puntos y copiar al portapapeles
         coordinate_script = """
         <script>
         var drawnItems = new L.FeatureGroup();
         map.addLayer(drawnItems);
-        
+
         map.on('draw:created', function(e) {
             var layer = e.layer;
             drawnItems.addLayer(layer);
-            
-            // Agregar evento de clic derecho
+
             layer.on('contextmenu', function(e) {
-                var coords = layer.getLatLngs()[0];
-                var coordsArray = [];
-                coords.forEach(function(coord) {
-                    coordsArray.push([coord.lat, coord.lng]);
+                var latlngs = layer.getLatLngs()[0];  // Lista de puntos
+                var coordsArray = latlngs.map(function(p) {
+                    return [p.lat, p.lng];  // Solo lat y lon
                 });
-                
-                // Mostrar coordenadas en popup
                 var coordsText = JSON.stringify(coordsArray, null, 2);
+
                 var popup = L.popup()
                     .setLatLng(e.latlng)
-                    .setContent('<div style="max-width: 300px;"><strong>Coordenadas:</strong><br>' + 
-                               '<textarea style="width: 100%; height: 100px;" readonly>' + 
-                               coordsText + '</textarea><br>' +
-                               '<small>Selecciona todo el texto y cópialo (Ctrl+A, Ctrl+C)</small></div>')
+                    .setContent('<textarea style="width:100%; height:100px;" readonly>'
+                                + coordsText + '</textarea>')
                     .openOn(map);
-                    
-                // Seleccionar automáticamente el texto
+
+                // Copiar automáticamente al portapapeles
                 setTimeout(function() {
-                    var textarea = document.querySelector('textarea');
+                    var textarea = document.querySelector("textarea");
                     if (textarea) {
                         textarea.select();
+                        document.execCommand("copy");
                     }
                 }, 100);
             });
         });
         </script>
         """
-        
         m.get_root().html.add_child(folium.Element(coordinate_script))
         
         # Guardar mapa
@@ -211,32 +210,163 @@ class MapApp:
         m.save(map_path)
         
         return map_path
-        
+
+    def start_flask_server(self):
+        """Iniciar servidor Flask para recibir coordenadas del mapa"""
+        app = Flask(__name__)
+        coords_container = self.coords_recibidas  # referencia a la variable de la clase
+
+        @app.route("/")
+        def index():
+            # HTML del mapa con Leaflet Draw (igual que tu código)
+            mapa_html = """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Mapa Selector de Campo</title>
+                    <meta charset="utf-8" />
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+                    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.css"/>
+                    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                    <script src="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+                </head>
+                <body>
+                    <div id="map" style="width: 100%; height: 100vh;"></div>
+                    <script>
+                        var map = L.map('map').setView([-34.6037, -58.3816], 6);
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '© OpenStreetMap'
+                        }).addTo(map);
+
+                        var drawnItems = new L.FeatureGroup();
+                        map.addLayer(drawnItems);
+
+                        var drawControl = new L.Control.Draw({
+                            draw: {
+                                polygon: true,
+                                rectangle: true,
+                                polyline: false,
+                                circle: false,
+                                marker: false,
+                                circlemarker: false
+                            },
+                            edit: {
+                                featureGroup: drawnItems
+                            }
+                        });
+                        map.addControl(drawControl);
+
+                        map.on('draw:created', function(e) {
+                            var layer = e.layer;
+                            drawnItems.addLayer(layer);
+
+                            layer.on('contextmenu', function(e) {
+                                var latlngs = layer.getLatLngs()[0];
+                                var coordsArray = latlngs.map(function(p) {
+                                    return [p.lng, p.lat];
+                                });
+
+                                // Enviar al servidor y esperar respuesta
+                                fetch('/guardar_coords', {
+                                    method: 'POST',
+                                    headers: {'Content-Type': 'application/json'},
+                                    body: JSON.stringify({coordenadas: coordsArray})
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    console.log("Coordenadas enviadas:", data.coordenadas);
+                                    // Solo cerrar la ventana después de 500ms para asegurar envío
+                                    setTimeout(() => { window.close(); }, 500);
+                                })
+                                .catch(err => {
+                                    console.error("Error enviando coordenadas:", err);
+                                    alert("Error enviando coordenadas, revisa la consola.");
+                                });
+                            });
+
+                        });
+                    </script>
+                </body>
+                </html>
+                """
+            return mapa_html
+
+        @app.route("/guardar_coords", methods=["POST"])
+        def guardar_coords():
+            data = request.get_json()
+            coords = data['coordenadas']
+            print("Coordenadas recibidas:", coords)
+            coords_container.clear()
+            coords_container.extend(coords)
+
+            coords_str = json.dumps(coords, indent=2)
+
+            self.coords_input.delete(1.0, tk.END)
+            self.coords_input.insert(1.0, coords_str)
+
+
+            # Cerrar servidor
+            shutdown_func = request.environ.get('werkzeug.server.shutdown')
+            if shutdown_func:
+                shutdown_func()
+
+            return jsonify({'coordenadas': coords})
+
+        webbrowser.open("http://127.0.0.1:5000/")
+        app.run()
+
     def open_map(self):
-        """Abrir mapa en navegador"""
+        """Abrir mapa en navegador y arrancar servidor Flask para recibir coordenadas"""
         try:
             self.btn_map.config(text="Abriendo mapa...", state="disabled")
             
-            # Crear mapa actualizado
-            map_path = self.create_map()
-            
-            # Abrir en navegador
-            webbrowser.open(f'file://{os.path.abspath(map_path)}')
-            
-            # Mostrar mensaje de instrucciones
+            # Arrancar servidor en hilo
+            self._flask_thread = threading.Thread(target=self.start_flask_server)
+            self._flask_thread.daemon = True
+            self._flask_thread.start()
+
+            # Esperar un momento para abrir instrucciones
             messagebox.showinfo("Mapa Abierto", 
                 "✅ El mapa se abrió en tu navegador.\n\n" +
                 "🔹 Dibuja el polígono de tu campo\n" +
                 "🔹 Haz clic derecho sobre el polígono\n" +
-                "🔹 Copia las coordenadas\n" +
-                "🔹 Pégalas en la aplicación y procesa")
+                "🔹 Las coordenadas se enviarán automáticamente a la aplicación\n" +
+                "🔹 Luego podrás procesarlas aquí mismo")
             
             self.btn_map.config(text="🗺️ Abrir Mapa Interactivo", state="normal")
             
         except Exception as e:
             messagebox.showerror("Error", f"No se pudo abrir el mapa: {str(e)}")
             self.btn_map.config(text="🗺️ Abrir Mapa Interactivo", state="normal")
+
+    
+    def load_from_map(self):
+        """Cargar coordenadas generadas por el mapa (coords_temp.json)"""
+        try:
+            # Archivo que genera el mapa
+            map_file = os.path.join(os.getcwd(), "coords_temp.json")
             
+            if not os.path.exists(map_file):
+                messagebox.showwarning("Archivo no encontrado", 
+                                    "No se encontró el archivo coords_temp.json.\n" +
+                                    "Primero dibuja un polígono y haz clic derecho en el mapa.")
+                return
+            
+            with open(map_file, 'r', encoding='utf-8') as f:
+                self.coordenadas = json.load(f)
+            
+            # Mostrar coordenadas en la interfaz
+            self.coords_input.delete(1.0, tk.END)
+            self.coords_input.insert(1.0, json.dumps(self.coordenadas, indent=2))
+            
+            # Procesar automáticamente
+            self.process_coordinates()
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudieron cargar las coordenadas: {e}")
+
+
     def process_manual_coordinates(self):
         """Procesar coordenadas ingresadas manualmente"""
         try:

@@ -17,7 +17,7 @@
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <style>
-                #map_1f71b96a54aa12cf1a6951b289a092c4 {
+                #map_aedfed73063e1d785768c27b94681675 {
                     position: relative;
                     width: 100.0%;
                     height: 100.0%;
@@ -56,41 +56,29 @@
 <body>
     
     
-        <div style="position: fixed; top:10px; right:10px; width:300px;
-                    background:white; border:2px solid #333; border-radius:5px;
-                    padding:10px; font-family:Arial; z-index:1000;">
-        <h4>📋 Instrucciones:</h4>
-        <ol>
-        <li>Usa la herramienta de polígono (□)</li>
-        <li>Dibuja el polígono en tu campo</li>
-        <li>Haz clic derecho sobre el polígono</li>
-        <li>Se copiarán y enviarán las coordenadas automáticamente</li>
-        </ol></div>
+    <script>
+    var drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
+
+    map.on('draw:created', function(e) {
+        var layer = e.layer;
+        drawnItems.addLayer(layer);
+
+        var latlngs = layer.getLatLngs()[0];  // lista de puntos
+        var coords = latlngs.map(p => [p.lat, p.lng]);
+
+        console.log("📤 Enviando:", coords);
+
+        fetch('/coords', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(coords)
+        }).then(r => console.log("✅ Respuesta del backend:", r));
+    });
+    </script>
     
-        <script>
-        var drawnItems = new L.FeatureGroup();
-        map.addLayer(drawnItems);
-        map.on('draw:created', function(e){
-            var layer = e.layer;
-            drawnItems.addLayer(layer);
-            layer.on('contextmenu', function(e){
-                var latlngs = layer.getLatLngs()[0];
-                var coordsArray = latlngs.map(function(p){ return [p.lat,p.lng]; });
-                var coordsText = JSON.stringify(coordsArray,null,2);
-                var popup = L.popup().setLatLng(e.latlng)
-                    .setContent('<textarea style="width:100%; height:100px;" readonly>'
-                    + coordsText + '</textarea>').openOn(map);
-                setTimeout(function(){
-                    var textarea = document.querySelector("textarea");
-                    if(textarea){ textarea.select(); document.execCommand("copy"); }
-                },100);
-                fetch("/guardar_coords", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({"coordenadas":coordsArray})});
-            });
-        });
-        </script>
-        
     
-            <div class="folium-map" id="map_1f71b96a54aa12cf1a6951b289a092c4" ></div>
+            <div class="folium-map" id="map_aedfed73063e1d785768c27b94681675" ></div>
         
     
             
@@ -99,13 +87,13 @@
 <script>
     
     
-            var map_1f71b96a54aa12cf1a6951b289a092c4 = L.map(
-                "map_1f71b96a54aa12cf1a6951b289a092c4",
+            var map_aedfed73063e1d785768c27b94681675 = L.map(
+                "map_aedfed73063e1d785768c27b94681675",
                 {
-                    center: [-34.6037, -58.3816],
+                    center: [-60.274, -33.33763],
                     crs: L.CRS.EPSG3857,
                     ...{
-  "zoom": 6,
+  "zoom": 10,
   "zoomControl": true,
   "preferCanvas": false,
 }
@@ -117,7 +105,7 @@
 
         
     
-            var tile_layer_ba4043cc706eba711fb47f66ea5a3bc7 = L.tileLayer(
+            var tile_layer_0c66532d71c96eee74f52a1b6cf95d32 = L.tileLayer(
                 "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                 {
   "minZoom": 0,
@@ -134,7 +122,7 @@
             );
         
     
-            tile_layer_ba4043cc706eba711fb47f66ea5a3bc7.addTo(map_1f71b96a54aa12cf1a6951b289a092c4);
+            tile_layer_0c66532d71c96eee74f52a1b6cf95d32.addTo(map_aedfed73063e1d785768c27b94681675);
         
     
             var options = {
@@ -143,16 +131,16 @@
               edit: {"edit": true},
             }
                 // FeatureGroup is to store editable layers.
-                var drawnItems_draw_control_d4804b1d6a4f7ad6487b032ea4973e30 =
+                var drawnItems_draw_control_5d834969521c60dd0900810aebb1b050 =
                     new L.featureGroup().addTo(
-                        map_1f71b96a54aa12cf1a6951b289a092c4
+                        map_aedfed73063e1d785768c27b94681675
                     );
 
-            options.edit.featureGroup = drawnItems_draw_control_d4804b1d6a4f7ad6487b032ea4973e30;
-            var draw_control_d4804b1d6a4f7ad6487b032ea4973e30 = new L.Control.Draw(
+            options.edit.featureGroup = drawnItems_draw_control_5d834969521c60dd0900810aebb1b050;
+            var draw_control_5d834969521c60dd0900810aebb1b050 = new L.Control.Draw(
                 options
-            ).addTo( map_1f71b96a54aa12cf1a6951b289a092c4 );
-            map_1f71b96a54aa12cf1a6951b289a092c4.on(L.Draw.Event.CREATED, function(e) {
+            ).addTo( map_aedfed73063e1d785768c27b94681675 );
+            map_aedfed73063e1d785768c27b94681675.on(L.Draw.Event.CREATED, function(e) {
                 var layer = e.layer,
                     type = e.layerType;
                 var coords = JSON.stringify(layer.toGeoJSON());
@@ -160,10 +148,10 @@
                     alert(coords);
                     console.log(coords);
                 });
-                drawnItems_draw_control_d4804b1d6a4f7ad6487b032ea4973e30.addLayer(layer);
+                drawnItems_draw_control_5d834969521c60dd0900810aebb1b050.addLayer(layer);
             });
-            map_1f71b96a54aa12cf1a6951b289a092c4.on('draw:created', function(e) {
-                drawnItems_draw_control_d4804b1d6a4f7ad6487b032ea4973e30.addLayer(e.layer);
+            map_aedfed73063e1d785768c27b94681675.on('draw:created', function(e) {
+                drawnItems_draw_control_5d834969521c60dd0900810aebb1b050.addLayer(e.layer);
             });
 
             
