@@ -3,12 +3,15 @@ from tkinter import ttk, messagebox, scrolledtext, filedialog
 import folium
 from folium.plugins import Draw
 import webbrowser
+import threading
+from flask import Flask, request, jsonify
 import os
 import json
 import math
 import requests
 import time
 import tempfile
+from departamento import encontrar_departamento 
 
 class MapApp:
     def __init__(self):
@@ -20,7 +23,14 @@ class MapApp:
         self.area_m2 = 0
         self.departamento = ""
         self.provincia = ""
+        self._flask_thread = None
         
+        #Flask
+        self.app = Flask(__name__)
+        self._setup_flask_routes()
+
+        threading.Thread(target=lambda: self.app.run(port=5001, debug=False, use_reloader=False)).start()
+
         self.create_interface()
         
     def create_interface(self):
@@ -32,8 +42,7 @@ class MapApp:
                  font=("Arial", 16, "bold")).grid(row=0, column=0, columnspan=2, pady=(0, 15))
         
         # Instrucciones compactas
-        instructions = ("1. Abrir mapa \n2. Dibujar polígono \n3. Clic derecho \n"
-                       "4. Copiar coordenadas (dos corchetes) \n5. Pegar y procesar")
+        instructions = ("1. Abrir mapa \n2. Dibujar polígono \n3. Clic derecho")
         ttk.Label(main_frame, text=instructions, justify=tk.LEFT, 
                  font=("Arial", 9)).grid(row=1, column=0, columnspan=2, pady=(0, 15), sticky=tk.W)
         
@@ -78,7 +87,7 @@ class MapApp:
         
     def create_map(self):
         """Crear mapa con controles de dibujo"""
-        m = folium.Map(location=[-34.6037, -58.3816], zoom_start=6)
+        m = folium.Map(location=[-33.33, -60.23], zoom_start=10)
         
         # Plugin de dibujo
         Draw(draw_options={'polygon': True, 'rectangle': True, 'circle': False, 
@@ -87,56 +96,144 @@ class MapApp:
         
         # Script para mostrar coordenadas
         script = """
-        <script>
-        var drawnItems = new L.FeatureGroup();
-        map.addLayer(drawnItems);
-        
-        map.on('draw:created', function(e) {
-            var layer = e.layer;
-            drawnItems.addLayer(layer);
-            
-            layer.on('contextmenu', function(e) {
-                var coords = layer.getLatLngs()[0];
-                var coordsArray = coords.map(c => [c.lat, c.lng]);
-                var coordsText = JSON.stringify(coordsArray, null, 2);
-                
-                L.popup()
-                    .setLatLng(e.latlng)
-                    .setContent(`<div><strong>Coordenadas:</strong><br>
-                               <textarea style="width:280px;height:80px;" readonly>${coordsText}</textarea><br>
-                               <small>Ctrl+A para seleccionar todo, Ctrl+C para copiar</small></div>`)
-                    .openOn(map);
-                    
-                setTimeout(() => {
-                    const textarea = document.querySelector('textarea');
-                    if (textarea) textarea.select();
-                }, 100);
+            <script>
+            var drawnItems = new L.FeatureGroup();
+            map.addLayer(drawnItems);
+
+            map.on('draw:created', function(e) {
+                var layer = e.layer;
+                drawnItems.addLayer(layer);
+
+                var coords = layer.getLatLngs()[0].map(c => [c.lat, c.lng]);
+                fetch("http://127.0.0.1:5001/guardar_coords", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({coordenadas: coords})
+                }).then(r => console.log("Enviado"));
             });
-        });
-        </script>
-        """
+            </script>
+            """
         m.get_root().html.add_child(folium.Element(script))
         
         return m
-        
+    
+    def _setup_flask_routes(self):
+        coords_container = self.coordenadas
+
+        @self.app.route("/")
+        def index():
+            return """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Mapa Selector de Campo</title>
+                    <meta charset="utf-8" />
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+                    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.css"/>
+                    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                    <script src="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+                </head>
+                <body>
+                    <div id="map" style="width: 100%; height: 100vh;"></div>
+                    <script>
+                        var map = L.map('map').setView([-33.33, -60.23], 10);
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '© OpenStreetMap'
+                        }).addTo(map);
+
+                        var drawnItems = new L.FeatureGroup();
+                        map.addLayer(drawnItems);
+
+                        var drawControl = new L.Control.Draw({
+                            draw: {
+                                polygon: true,
+                                rectangle: true,
+                                polyline: false,
+                                circle: false,
+                                marker: false,
+                                circlemarker: false
+                            },
+                            edit: {
+                                featureGroup: drawnItems
+                            }
+                        });
+                        map.addControl(drawControl);
+
+                        map.on('draw:created', function(e) {
+                            var layer = e.layer;
+                            drawnItems.addLayer(layer);
+
+                            layer.on('contextmenu', function(e) {
+                                var latlngs = layer.getLatLngs()[0];
+                                var coordsArray = latlngs.map(function(p) {
+                                    return [p.lng, p.lat];
+                                });
+
+                                // Enviar al servidor y esperar respuesta
+                                fetch('/guardar_coords', {
+                                    method: 'POST',
+                                    headers: {'Content-Type': 'application/json'},
+                                    body: JSON.stringify({coordenadas: coordsArray})
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    console.log("Coordenadas enviadas:", data.coordenadas);
+                                    // Solo cerrar la ventana después de 500ms para asegurar envío
+                                    setTimeout(() => { window.close(); }, 500);
+                                })
+                                .catch(err => {
+                                    console.error("Error enviando coordenadas:", err);
+                                    alert("Error enviando coordenadas, revisa la consola.");
+                                });
+                            });
+
+                        });
+                    </script>
+                </body>
+                </html>
+                """
+
+        @self.app.route("/guardar_coords", methods=["POST"])
+        def guardar_coords():
+            data = request.get_json()
+            coords = data['coordenadas']
+            print("Coordenadas recibidas:", coords)
+
+            coords_container.clear()
+            coords_container.extend(coords)
+
+            coords_str = json.dumps(coords, indent=2)
+            self.coords_input.delete(1.0, tk.END)
+            self.coords_input.insert(1.0, coords_str)
+
+            departamento, provincia = encontrar_departamento(coords)
+            print(f"Departamento: {departamento}, Provincia: {provincia}")
+
+            shutdown_func = request.environ.get('werkzeug.server.shutdown')
+            if shutdown_func:
+                shutdown_func()
+
+            return jsonify({'coordenadas': coords})
+
+    def start_flask_server(self):
+        if self._flask_thread is None:
+            self._flask_thread = threading.Thread(
+                target=lambda: self.app.run(port=5001, debug=False, use_reloader=False)
+            )
+            self._flask_thread.daemon = True
+            self._flask_thread.start()
+
     def open_map(self):
-        """Abrir mapa en navegador usando archivo temporal"""
+        """"Abrir mapa servido por Flask"""
         try:
-            # Crear archivo temporal
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False) as f:
-                map_path = f.name
-                self.create_map().save(map_path)
-            
-            # Abrir en navegador
-            webbrowser.open(f'file://{os.path.abspath(map_path)}')
-            
+            self.start_flask_server()  # Arranca servidor en segundo plano si no está corriendo
+            webbrowser.open("http://127.0.0.1:5001/")
+            """
             messagebox.showinfo("Mapa Abierto", 
                 "✅ Mapa abierto en navegador\n"
-                "• Dibuja polígono\n• Clic derecho sobre él\n• Copia coordenadas")
-            
-            # Limpiar archivo temporal después de un tiempo
-            self.root.after(30000, lambda: self.cleanup_temp_file(map_path))
-            
+                "• Dibuja polígono\n• Clic derecho sobre él\n• Se guardan automáticamente")
+            """
         except Exception as e:
             messagebox.showerror("Error", f"No se pudo abrir el mapa: {str(e)}")
     
@@ -178,7 +275,7 @@ class MapApp:
             self.area_m2 = self.calcular_area(self.coordenadas)
             centro_lat = sum(c[0] for c in self.coordenadas) / len(self.coordenadas)
             centro_lon = sum(c[1] for c in self.coordenadas) / len(self.coordenadas)
-            self.departamento, self.provincia = self.obtener_ubicacion(centro_lat, centro_lon)
+            self.departamento, self.provincia = encontrar_departamento(self.coordenadas)
             
             # Actualizar resultados
             hectareas = self.area_m2 / 10000
