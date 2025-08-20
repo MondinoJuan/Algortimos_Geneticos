@@ -207,9 +207,6 @@ class MapApp:
             self.coords_input.delete(1.0, tk.END)
             self.coords_input.insert(1.0, coords_str)
 
-            departamento, provincia = encontrar_departamento(coords)
-            print(f"Departamento: {departamento}, Provincia: {provincia}")
-
             shutdown_func = request.environ.get('werkzeug.server.shutdown')
             if shutdown_func:
                 shutdown_func()
@@ -229,11 +226,7 @@ class MapApp:
         try:
             self.start_flask_server()  # Arranca servidor en segundo plano si no está corriendo
             webbrowser.open("http://127.0.0.1:5001/")
-            """
-            messagebox.showinfo("Mapa Abierto", 
-                "✅ Mapa abierto en navegador\n"
-                "• Dibuja polígono\n• Clic derecho sobre él\n• Se guardan automáticamente")
-            """
+
         except Exception as e:
             messagebox.showerror("Error", f"No se pudo abrir el mapa: {str(e)}")
     
@@ -286,8 +279,6 @@ class MapApp:
             
             self.area_var.set(area_text)
             self.location_var.set(f"Ubicación: {self.departamento}, {self.provincia}")
-            
-            messagebox.showinfo("Éxito", "¡Área calculada correctamente!")
             
         except Exception as e:
             messagebox.showerror("Error", f"Error: {str(e)}")
