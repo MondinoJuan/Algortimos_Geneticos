@@ -1,11 +1,15 @@
-import numpy as np
 import pandas as pd
 from keras.models import Sequential
 from keras.layers import LSTM, Dense, Dropout, Input
 from keras.optimizers import Adam
-from sklearn.preprocessing import StandardScaler
+from pathlib import Path
+import sys, os
+from shapely.geometry import MultiPoint
+# Agrego la carpeta raíz del proyecto (TPI) al PYTHONPATH
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 from Recuperacion_de_datos.Clima.Recupero_clima_NASA_Mensual import obtener_datos_nasa_power, procesar_datos_mensuales
+from Mapa.GIS.departamento import encontrar_departamento as transformo_coord_a_depto
 
 
 # -----------------------------
@@ -22,6 +26,18 @@ def build_lstm_model(input_shape):
     return model
 
 
+# -----------------------------
+# Filtro el departamento
+# -----------------------------
+def solo_departamento(coord):
+    depto, _ = transformo_coord_a_depto(coord)
+    return depto
+
+# Calculo el centroide
+def calcular_centroide(coord_list):
+    multipoint = MultiPoint(coord_list)
+    centroid = multipoint.centroid
+    return (centroid.x, centroid.y)  # devuelve (lon, lat)
 
 
 # -----------------------------
@@ -30,10 +46,11 @@ def build_lstm_model(input_shape):
 
 latitud_ejemplo = -31.4
 longitud_ejemplo = -64.2
+coord_ejemplo = (longitud_ejemplo, latitud_ejemplo)
 años_atras_ejemplo = 44
 
 # Preparo los archivos necesarios para entrenar el modelo
-df_clima_diario = obtener_datos_nasa_power(latitud_ejemplo, longitud_ejemplo, años_atras_ejemplo)
+df_clima_diario = obtener_datos_nasa_power(coord_ejemplo[1], coord_ejemplo[0], años_atras_ejemplo)
 if df_clima_diario.empty: #Si no hay datos climáticos para las coordenadas y años especificados terminar la ejecución
     raise ValueError("No se encontraron datos climáticos para las coordenadas y años especificados.")
 df_clima = procesar_datos_mensuales(df_clima_diario)
@@ -43,31 +60,40 @@ min_year = df_clima['fecha'].min().year
 
 # Recupero todos los datos de las semillas desde min_year en adelante
 df_semillas = pd.read_csv('Recuperacion_de_datos/Semillas/Archivos generados/semillas_todas_concatenadas.csv')
-df_semillas['fecha'] = pd.to_datetime(df_semillas['fecha'], errors='coerce')
-df_semillas = df_semillas[df_semillas['fecha'].dt.year >= min_year + 1] # Aseguramos que las semillas tengan al menos un año de datos climáticos previos.
+# Aseguro que las semillas tengan al menos un año de datos climáticos previos
+df_semillas['anio'] = pd.to_datetime(df_semillas['anio'], errors='coerce')
+df_semillas = df_semillas[df_semillas['anio'].dt.year >= min_year + 1] # Aseguramos que las semillas tengan al menos un año de datos climáticos previos.
 
 df_suelo = pd.read_csv('Recuperacion_de_datos/Suelos/suelo_unido.csv')
 
 # Debo limpiar las columnas con muchos datos faltantes porque interfieren mucho en el entreno de la RN.
 # Elimino las columnas que tienen 85% o más datos faltantes
-df_suelo_filtrado = df_suelo.dropna(thresh=len(df_suelo) * 0.15, axis=1)
-df_clima_filtrado = df_clima.dropna(thresh=len(df_clima) * 0.15, axis=1)
-df_semillas_filtrado = df_semillas.dropna(thresh=len(df_semillas) * 0.15, axis=1)
+df_suelo_filtrado = df_suelo.dropna(thresh=len(df_suelo) * 0.15, axis=1).copy()
+df_clima_filtrado = df_clima.dropna(thresh=len(df_clima) * 0.15, axis=1).copy()
+df_semillas_filtrado = df_semillas.dropna(thresh=len(df_semillas) * 0.15, axis=1).copy()
 
+path_archivo_suelo = Path("Recuperacion_de_datos/Suelos/suelo_promedio.csv")
 
-# Crear nueva columna 'departamento' indicando a que departamento corresponde cada dato de suelo
-df_suelo_filtrado['departamento_nombre'] = df_suelo_filtrado.apply(
-    lambda row: transformo_coord_a_depto([row['latitude'], row['longitude']]),
-    axis=1
-)
-# Eliminar columnas latitude y longitude
-df_suelo_filtrado = df_suelo_filtrado.drop(columns=['latitude', 'longitude'])
-# Reordenar para que 'departamento' quede como primera columna
-cols = ['departamento_nombre'] + [col for col in df_suelo_filtrado.columns if col != 'departamento_nombre']
-df_suelo_filtrado = df_suelo_filtrado[cols]
+if path_archivo_suelo.exists():
+    df_suelo_promedio = pd.read_csv('Recuperacion_de_datos/Suelos/suelo_promedio.csv')
+else:
+    # Crear nueva columna 'departamento' indicando a que departamento corresponde cada dato de suelo
+    df_suelo_filtrado.loc[:, 'departamento_nombre'] = df_suelo_filtrado.apply(
+        lambda row: solo_departamento([(row['longitude'], row['latitude'])]),
+        axis=1
+    )
+    # Reordenar para que 'departamento' quede como primera columna
+    cols = ['departamento_nombre'] + [col for col in df_suelo_filtrado.columns if col != 'departamento_nombre']
+    df_suelo_filtrado = df_suelo_filtrado[cols]
 
-# Calcular el promedio de las columnas numéricas para cada departamento
-df_suelo_promedio = df_suelo_filtrado.groupby('departamento_nombre', as_index=False).mean(numeric_only=True)
+    df_suelo_filtrado['coords'] = list(zip(df_suelo_filtrado['longitude'], df_suelo_filtrado['latitude']))
+
+    df_suelo_filtrado.to_csv('Recuperacion_de_datos/Suelos/suelo_filtrado.csv', index=False)
+
+    # Calcular el promedio de las columnas numéricas para cada departamento
+    df_suelo_promedio = df_suelo_filtrado.groupby('departamento_nombre', as_index=False).mean(numeric_only=True)
+
+    df_suelo_promedio.to_csv('Recuperacion_de_datos/Suelos/suelo_promedio.csv', index=False)
 
 
 # ---------------------------------------------
@@ -81,6 +107,8 @@ df_combino_semillas_suelo = pd.merge(df_semillas_filtrado, df_suelo_promedio, on
 
 # Ordeno por columna "anio"
 df_combino_semillas_suelo = df_combino_semillas_suelo.sort_values(by='anio').reset_index(drop=True)
+
+df_combino_semillas_suelo.to_csv('semillas_suelo_combinado_ordenado.csv', index=False)   # Se pasa vacio
 
 
 '''
@@ -119,14 +147,16 @@ n_meses = 18
 df_combino_semillas_suelo_clima = agregar_datos_climaticos1(df_combino_semillas_suelo, df_clima, n_meses)
 df_combino_semillas_suelo_clima = agregar_datos_climaticos2(df_combino_semillas_suelo, df_clima, n_meses)
 
-pd.to_csv(df_combino_semillas_suelo_clima, 'Red_neuronal/df_completo_para_RN_lstm.csv', index=False)
+df_combino_semillas_suelo_clima.to_csv('df_completo_para_RN_lstm.csv', index=False)
 
 
 
 # Reordeno las columnas del archivo para que los datos de entrada queden al principio y los de salida (la produccion obtenida) al final
 # Completar cuando se obtenga el archivo df_completo_para_RN_lstm.csv
 
-
+# DEBERIA CORREGIR LA OBTENCION DE DATOS PARA ENTRENAR LA RED NEURONAL, ya que el clima se obtiene en una coordenada especifica,
+# tendría que filtrar las semillas por dicho depto.
+# Para esto deberia concatenar semillas con suelo, filtrar por depto y ahí obtener el clima de ese depto.
 
 
 # ---------------------------------------------
@@ -134,7 +164,8 @@ pd.to_csv(df_combino_semillas_suelo_clima, 'Red_neuronal/df_completo_para_RN_lst
 # Se utilizará el 80% de los datos para entrenar y el 20% para validar
 # ---------------------------------------------
 # Cargo el archivo con todos los datos necesarios
-df_completo = pd.read_csv('Red_neuronal/df_completo_para_RN_lstm.csv')
+
+## df_completo = pd.read_csv('Red_neuronal/df_completo_para_RN_lstm.csv')
 
 # Selecciono las columnas que voy a usar como datos de entrada y salida
 

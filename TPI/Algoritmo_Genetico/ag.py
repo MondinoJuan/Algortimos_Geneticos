@@ -10,14 +10,13 @@ def aleatorio():
     return random.randint(0, 1)
 
 def completoCromosoma(cantidad):
-    cromosoma = [aleatorio() for _ in range(cantidad)]
+    cromosoma = 
+    pass
     return cromosoma
 
 def generarPoblacion(cantidadCromosomas, cantidadGenes):
     poblacion = []
-    for _ in range(cantidadCromosomas):
-        cromosoma = completoCromosoma(cantidadGenes)
-        poblacion.append(cromosoma)
+    pass
     return poblacion
 
 def binarioADecimal(cromosoma):
@@ -30,8 +29,8 @@ def binarioADecimal(cromosoma):
     return decimal
 
 def funcionObjetivo(x):
-    coef = (2 ** 30) - 1
-    return (x / coef) ** 2  
+    pass
+    return
 
 def calculadorFuncionObjetivo(poblacion):
     objetivos = []

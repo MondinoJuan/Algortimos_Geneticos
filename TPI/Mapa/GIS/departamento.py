@@ -55,12 +55,14 @@ def encontrar_departamento(*coords):
         for _, row in interseccion.iterrows():
             provs.append(row['fna'])
             deptos.append(row['nam'])
+            '''
             print(
                 f"Provincia: {provs[-1]}, Departamento: {deptos[-1]}"
             )  ##ver porque a veces no sale la provincia
+            '''
         return deptos[0], provs[0]
     else:
-        print("El polígono no intersecta con ningún departamento.")
+        '''print("El polígono no intersecta con ningún departamento.")'''
         return "No determinado", "No determinada"
                 
 #encontrar_departamento([(-60.274, -33.33763)])
