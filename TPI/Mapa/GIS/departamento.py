@@ -2,7 +2,7 @@
 ##Las coordenadas que da el mapa interactivo copiarlas en la variable geojson
 import json
 import geopandas as gpd
-from shapely.geometry import shape, Point, Polygon, LineString
+from shapely.geometry import shape, Point, Polygon, LineString, MultiPoint
 from pathlib import Path 
 
 def encontrar_departamento(*coords):
@@ -18,20 +18,25 @@ def encontrar_departamento(*coords):
     for x in coords[0]:
         coordenadas.append(x)
 
-    if len(coordenadas) == 1:
-        geom = Point(coordenadas[0])
-    elif len(coordenadas) == 2:
-        geom = LineString(coordenadas)
-    else:
+    print(coordenadas)
+
+    if not len(coordenadas) == 1:
         # Convertir a lista de listas
         lista_coords = [list(c) for c in coords[0]]
-        # Asegurarse de cerrar el polígono (el primer punto = último punto)
-        if lista_coords[0] != lista_coords[-1]:
-            lista_coords.append(lista_coords[0])
-        geom = Polygon(lista_coords)
+        if len(coordenadas) > 2:
+            # Asegurarse de cerrar el polígono (el primer punto = último punto)
+            if lista_coords[0] != lista_coords[-1]:
+                lista_coords.append(lista_coords[0])
+        
+        multipoint = MultiPoint(lista_coords)
+        centroide = multipoint.centroid
+        coordenadas= [centroide.x, centroide.y]
+    
+    print(coordenadas)
+    geom = Point(coordenadas)
 
     # Crear un GeoDataFrame con esa geometría
-    poligono_gdf = gpd.GeoDataFrame(index=[0], geometry=[geom], crs="EPSG:4326")
+    gdf = gpd.GeoDataFrame(index=[0], geometry=[geom], crs="EPSG:4326")
 
     # Leer los departamentos desde el shapefile del IGN
     departamentos = gpd.read_file(shapefile_path)
@@ -40,13 +45,17 @@ def encontrar_departamento(*coords):
     departamentos = departamentos.to_crs(epsg=4326)
     if geom.geom_type == "Point":
         interseccion = departamentos[departamentos.contains(geom)]
+
+    #LIMPIAR
+    """
     elif geom.geom_type == "LineString":
         interseccion = departamentos[departamentos.intersects(geom)]
     else:
         # Hacer la intersección: encontrar qué departamentos intersectan con tu polígono
-        interseccion = gpd.overlay(departamentos, poligono_gdf, how="intersection")
+        interseccion = gpd.overlay(departamentos, gdf, how="intersection")
         # Evitar duplicados por fragmentos
         interseccion = interseccion.drop_duplicates(subset=["fna", "nam"])
+    """
 
     # Mostrar resultados
     if not interseccion.empty:
