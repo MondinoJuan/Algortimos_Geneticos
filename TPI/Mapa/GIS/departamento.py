@@ -18,7 +18,7 @@ def encontrar_departamento(*coords):
     for x in coords[0]:
         coordenadas.append(x)
 
-    print(coordenadas)
+    #print(coordenadas)
 
     if not len(coordenadas) == 1:
         # Convertir a lista de listas
@@ -32,7 +32,7 @@ def encontrar_departamento(*coords):
         centroide = multipoint.centroid
         coordenadas= [centroide.x, centroide.y]
     
-    print(coordenadas)
+    #print(coordenadas)
     geom = Point(coordenadas)
 
     # Crear un GeoDataFrame con esa geometría

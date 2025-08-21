@@ -52,15 +52,15 @@ def obtener_datos_nasa_power(lat, lon, años_atras=44):
     }
     
     print(f"Consultando datos NASA POWER para coordenadas ({lat}, {lon})...")
-    print(f"Período: {fecha_inicio.strftime('%Y-%m-%d')} a {fecha_actual.strftime('%Y-%m-%d')}")
-    print(f"URL: {base_url}")
-    print(f"Parámetros: {params}")
+    #print(f"Período: {fecha_inicio.strftime('%Y-%m-%d')} a {fecha_actual.strftime('%Y-%m-%d')}")
+    #print(f"URL: {base_url}")
+    #print(f"Parámetros: {params}")
     
     try:
         # Realizar solicitud a la API
         response = requests.get(base_url, params=params, timeout=60)
         
-        print(f"Código de respuesta: {response.status_code}")
+        #print(f"Código de respuesta: {response.status_code}")
         
         if response.status_code == 200:
             data = response.json()
@@ -125,7 +125,7 @@ def obtener_datos_nasa_power(lat, lon, años_atras=44):
             # Convertir velocidad de viento de m/s a km/h
             df['velocidad_viento_km_h'] = df['velocidad_viento_m_s'] * 3.6
             
-            print(f"✅ Datos obtenidos exitosamente: {len(df)} registros")
+            #print(f"✅ Datos obtenidos exitosamente: {len(df)} registros")
             return df
             
         elif response.status_code == 422:
@@ -204,30 +204,30 @@ if __name__ == "__main__":
     longitud = -64.2
     años_atras = 44
     
-    print("=== OBTENIENDO DATOS DIARIOS Y PROCESANDO MENSUALMENTE ===")
+    #print("=== OBTENIENDO DATOS DIARIOS Y PROCESANDO MENSUALMENTE ===")
     # Obtener datos diarios
     df_clima_diario = obtener_datos_nasa_power(latitud, longitud, años_atras)
     
     if not df_clima_diario.empty:
         # Procesar a datos mensuales
         df_clima = procesar_datos_mensuales(df_clima_diario)
-        print(f"✅ Datos diarios procesados a {len(df_clima)} registros mensuales")
+        #print(f"✅ Datos diarios procesados a {len(df_clima)} registros mensuales")
     
     if not df_clima.empty:
         # Guardar en CSV
         output_path = f"Recuperacion_de_datos/Clima/clima_nasa_mensual_{años_atras}_anios.csv"
         df_clima.to_csv(output_path, index=False)
         
-        print(f"\n✅ Datos mensuales guardados en: {output_path}")
-        print(f"Total de registros mensuales: {len(df_clima)}")
-        print("\nPrimeros registros:")
-        print(df_clima.head())
+        #print(f"\n✅ Datos mensuales guardados en: {output_path}")
+        #print(f"Total de registros mensuales: {len(df_clima)}")
+        #print("\nPrimeros registros:")
+        #print(df_clima.head())
         
-        print("\nÚltimos registros:")
-        print(df_clima.tail())
+        #print("\nÚltimos registros:")
+        #print(df_clima.tail())
         
-        print("\nEstadísticas básicas:")
-        print(df_clima.describe())
+        #print("\nEstadísticas básicas:")
+        #print(df_clima.describe())
         
         # Verificar datos faltantes
         print("\nDatos faltantes por columna:")
@@ -235,8 +235,9 @@ if __name__ == "__main__":
         
         # Mostrar información sobre el procesamiento
         if 'precipitacion_mm_mes' in df_clima.columns:
-            print(f"\nPrecipitación promedio mensual: {df_clima['precipitacion_mm_mes'].mean():.2f} mm")
-            print(f"Temperatura promedio: {df_clima['temperatura_media_C'].mean():.2f}°C")     
+            #print(f"\nPrecipitación promedio mensual: {df_clima['precipitacion_mm_mes'].mean():.2f} mm")
+            #print(f"Temperatura promedio: {df_clima['temperatura_media_C'].mean():.2f}°C") 
+            pass    
     else:
         print("\n❌ No se pudieron obtener datos de NASA POWER")
         print("Verifica las coordenadas y la conexión a internet")

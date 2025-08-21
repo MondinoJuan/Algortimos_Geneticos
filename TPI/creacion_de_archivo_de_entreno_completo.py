@@ -40,36 +40,60 @@ def calcular_centroide(coord_list):
     return (centroid.x, centroid.y)  # devuelve (lon, lat)
 
 
+def agregar_clima_por_departamento(df_semillas, df_suelo_promedio, años_atras_ejemplo, n_meses=18):
+    # Copia para no modificar el original
+    df_semillas = df_semillas.copy()
+
+    # Iterar sobre cada departamento en df_suelo_promedio
+    for _, row in df_suelo_promedio.iterrows():
+        depto = row['departamento_nombre']
+        lon_str, lat_str = row['coords'].strip("()").split(",")
+        lon, lat = float(lon_str), float(lat_str)
+
+        # Obtener clima para este centroide
+        df_clima_diario = obtener_datos_nasa_power(lat, lon, años_atras_ejemplo)
+        if df_clima_diario.empty:
+            print(f"⚠️ No se encontraron datos climáticos para {depto}")
+            continue
+
+        df_clima = procesar_datos_mensuales(df_clima_diario)
+        df_clima['fecha'] = pd.to_datetime(df_clima['fecha'], errors='coerce')
+        df_clima_filtrado = df_clima.dropna(thresh=len(df_clima) * 0.15, axis=1).copy()
+
+        # Filtrar semillas de este departamento
+        mask = df_semillas['departamento_nombre'] == depto
+
+        for variable in ['temperatura_media_C','humedad_relativa_%',
+                 'velocidad_viento_m_s','velocidad_viento_km_h',
+                 'precipitacion_mm_mes']:
+
+            df_semillas.loc[mask, variable] = df_semillas.loc[mask, 'anio'].apply(
+            lambda anio: df_clima_filtrado[df_clima_filtrado['fecha'] < anio][variable]
+                      .tail(n_meses)
+                      .tolist()
+            )
+
+    return df_semillas
+
+
 # -----------------------------
 # PROGRAMA
 # -----------------------------
-
-latitud_ejemplo = -31.4
-longitud_ejemplo = -64.2
-coord_ejemplo = (longitud_ejemplo, latitud_ejemplo)
 años_atras_ejemplo = 44
 
 # Preparo los archivos necesarios para entrenar el modelo
-df_clima_diario = obtener_datos_nasa_power(coord_ejemplo[1], coord_ejemplo[0], años_atras_ejemplo)
-if df_clima_diario.empty: #Si no hay datos climáticos para las coordenadas y años especificados terminar la ejecución
-    raise ValueError("No se encontraron datos climáticos para las coordenadas y años especificados.")
-df_clima = procesar_datos_mensuales(df_clima_diario)
-# Recupero el menor año del que se tengan datos
-df_clima['fecha'] = pd.to_datetime(df_clima['fecha'], errors='coerce')
-min_year = df_clima['fecha'].min().year
 
 # Recupero todos los datos de las semillas desde min_year en adelante
 df_semillas = pd.read_csv('Recuperacion_de_datos/Semillas/Archivos generados/semillas_todas_concatenadas.csv')
 # Aseguro que las semillas tengan al menos un año de datos climáticos previos
 df_semillas['anio'] = pd.to_datetime(df_semillas['anio'], errors='coerce')
-df_semillas = df_semillas[df_semillas['anio'].dt.year >= min_year + 1] # Aseguramos que las semillas tengan al menos un año de datos climáticos previos.
+df_semillas = df_semillas[df_semillas['anio'].dt.year >= años_atras_ejemplo + 1] # Aseguramos que las semillas tengan al menos un año de datos climáticos previos.
 
 df_suelo = pd.read_csv('Recuperacion_de_datos/Suelos/suelo_unido.csv')
 
 # Debo limpiar las columnas con muchos datos faltantes porque interfieren mucho en el entreno de la RN.
 # Elimino las columnas que tienen 85% o más datos faltantes
 df_suelo_filtrado = df_suelo.dropna(thresh=len(df_suelo) * 0.15, axis=1).copy()
-df_clima_filtrado = df_clima.dropna(thresh=len(df_clima) * 0.15, axis=1).copy()
 df_semillas_filtrado = df_semillas.dropna(thresh=len(df_semillas) * 0.15, axis=1).copy()
 
 path_archivo_suelo = Path("Recuperacion_de_datos/Suelos/suelo_promedio.csv")
@@ -90,82 +114,25 @@ else:
 
     df_suelo_filtrado.to_csv('Recuperacion_de_datos/Suelos/suelo_filtrado.csv', index=False)
 
-    # Calcular el promedio de las columnas numéricas para cada departamento
-    df_suelo_promedio = df_suelo_filtrado.groupby('departamento_nombre', as_index=False).mean(numeric_only=True)
+    # Calcular el promedio de las columnas numéricas para cada departamento y centroide para las coordenadas
+    df_suelo_promedio = df_suelo_filtrado.groupby('departamento_nombre').agg({
+        'coords': lambda x: calcular_centroide(list(x)),   # centroide de todas las coords
+        **{col: 'mean' for col in df_suelo_filtrado.columns if col not in ['departamento_nombre', 'coords', 'latitude', 'longitude']}
+    }).reset_index()
 
     df_suelo_promedio.to_csv('Recuperacion_de_datos/Suelos/suelo_promedio.csv', index=False)
 
-
-# ---------------------------------------------
-# UNIÓN DE LOS DATOS EN UN SOLO DATAFRAME
-# Crear archivo con todos los datos necesarios, las columnas mostraran los datos de las semillas, una columna que tenga una matriz con los datos climásticos de los últimos
-# n meses, o una columna por cada mes previo y en esa columna tener un array de los datos climáticos (o viceversa), y las columnas de los datos del suelo.
-# ---------------------------------------------
-
-# Combino los datos de las semillas con los datos del suelo por medio del departamento
-df_combino_semillas_suelo = pd.merge(df_semillas_filtrado, df_suelo_promedio, on='departamento_nombre', how='inner')
-
-# Ordeno por columna "anio"
-df_combino_semillas_suelo = df_combino_semillas_suelo.sort_values(by='anio').reset_index(drop=True)
-
-df_combino_semillas_suelo.to_csv('semillas_suelo_combinado_ordenado.csv', index=False)   # Se pasa vacio
-
-
-'''
-A df_combino_semillas_suelo le agrego las columnas temperatura_media_C, humedad_relativa_%, velocidad_viento_m_s, velocidad_viento_km_h, 
-precipitacion_mm_mes con los datos recuperados del archivo "clima_nasa_mensual_44_anios.csv, cada fila de las columnas tendrá un arreglo 
-de tamaño n que tenga los datos correspondiente a esa columna de los ultimos n meses previos al año que se lee en la columna anio de 
-df_combino_semillas_suelo
-'''
-
-def agregar_datos_climaticos1(df_combino, df_clima, n_meses):
-    for mes in range(1, n_meses + 1):
-        col_name = f'mes_{mes}'
-        df_combino[col_name] = df_combino['anio'].apply(
-            lambda x: df_clima[df_clima['fecha'].dt.year == x - 1][
-                ['fecha', 'temperatura_media_C', 'humedad_relativa_%', 'velocidad_viento_m_s', 'velocidad_viento_km_h', 'precipitacion_mm_mes']
-            ].tail(mes).values.tolist()
-        )
-    return df_combino
-
-def agregar_datos_climaticos2(df_combino, df_clima, n_meses):
-    df_clima = df_clima.sort_values('fecha')
-
-    for variable in ['temperatura_media_C','humedad_relativa_%',
-                     'velocidad_viento_m_s','velocidad_viento_km_h',
-                     'precipitacion_mm_mes']:
-
-        df_combino[variable] = df_combino['anio'].apply(
-            lambda anio: df_clima[df_clima['fecha'].dt.year < anio][variable]
-                          .tail(n_meses)
-                          .tolist()
-        )
-    return df_combino
-
+# Recupero clima para cada centroide de suelo_promedio
 n_meses = 18
+df_semillas_con_clima = agregar_clima_por_departamento(
+    df_semillas_filtrado, df_suelo_promedio, años_atras_ejemplo, n_meses
+)
 
-df_combino_semillas_suelo_clima = agregar_datos_climaticos1(df_combino_semillas_suelo, df_clima, n_meses)
-df_combino_semillas_suelo_clima = agregar_datos_climaticos2(df_combino_semillas_suelo, df_clima, n_meses)
+df_final = pd.merge(
+    df_semillas_con_clima,
+    df_suelo_promedio,
+    on='departamento_nombre',
+    how='inner'
+)
 
-df_combino_semillas_suelo_clima.to_csv('df_completo_para_RN_lstm.csv', index=False)
-
-
-
-# Reordeno las columnas del archivo para que los datos de entrada queden al principio y los de salida (la produccion obtenida) al final
-# Completar cuando se obtenga el archivo df_completo_para_RN_lstm.csv
-
-# DEBERIA CORREGIR LA OBTENCION DE DATOS PARA ENTRENAR LA RED NEURONAL, ya que el clima se obtiene en una coordenada especifica,
-# tendría que filtrar las semillas por dicho depto.
-# Para esto deberia concatenar semillas con suelo, filtrar por depto y ahí obtener el clima de ese depto.
-
-
-# ---------------------------------------------
-# ENTRENAMIENTO DEL MODELO
-# Se utilizará el 80% de los datos para entrenar y el 20% para validar
-# ---------------------------------------------
-# Cargo el archivo con todos los datos necesarios
-
-## df_completo = pd.read_csv('Red_neuronal/df_completo_para_RN_lstm.csv')
-
-# Selecciono las columnas que voy a usar como datos de entrada y salida
-
+df_final.to_csv('df_semillas_suelo_clima.csv', index=False)
