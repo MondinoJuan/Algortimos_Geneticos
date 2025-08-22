@@ -5,6 +5,8 @@ from keras.optimizers import Adam
 from pathlib import Path
 import sys, os
 from shapely.geometry import MultiPoint
+import numpy as np
+
 # Agrego la carpeta raíz del proyecto (TPI) al PYTHONPATH
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
@@ -40,15 +42,27 @@ def calcular_centroide(coord_list):
     return (centroid.x, centroid.y)  # devuelve (lon, lat)
 
 
-def agregar_clima_por_departamento(df_semillas, df_suelo_promedio, años_atras_ejemplo, n_meses=18):
+def agregar_clima_por_departamento(df_semillas, df_suelo_promedio, años_atras_ejemplo, n_meses=14):
     # Copia para no modificar el original
     df_semillas = df_semillas.copy()
+    
+    # CORREGIR: Asegurar que 'anio' sea solo el año (entero)
+    '''if df_semillas['anio'].dtype == 'object':
+        # Si es string con datetime, extraer solo el año
+        df_semillas['anio'] = pd.to_datetime(df_semillas['anio'], errors='coerce').dt.year
+    elif 'datetime' in str(df_semillas['anio'].dtype):
+        df_semillas['anio'] = df_semillas['anio'].dt.year'''
+
+    #print(f"AAAAAAAAAAAAAAAAAAAAAAA --- Tipos de datos después de corrección - anio: {df_semillas['anio'].dtype}")
+    #print(f"Ejemplo de años: {df_semillas['anio'].head().tolist()}")
 
     # Iterar sobre cada departamento en df_suelo_promedio
     for _, row in df_suelo_promedio.iterrows():
         depto = row['departamento_nombre']
         lon_str, lat_str = row['coords'].strip("()").split(",")
         lon, lat = float(lon_str), float(lat_str)
+
+        #print(f"Procesando departamento: {depto}")
 
         # Obtener clima para este centroide
         df_clima_diario = obtener_datos_nasa_power(lat, lon, años_atras_ejemplo)
@@ -59,35 +73,67 @@ def agregar_clima_por_departamento(df_semillas, df_suelo_promedio, años_atras_e
         df_clima = procesar_datos_mensuales(df_clima_diario)
         df_clima['fecha'] = pd.to_datetime(df_clima['fecha'], errors='coerce')
         df_clima_filtrado = df_clima.dropna(thresh=len(df_clima) * 0.15, axis=1).copy()
+        #print(f"AAAAAAAAAAAAAAAAAAAAAAA --- El tipo de dato de fecha es: {df_clima_filtrado['fecha'].dtype}")
+
+        #print(f"Rango de fechas clima: {df_clima_filtrado['fecha'].min()} a {df_clima_filtrado['fecha'].max()}")
 
         # Filtrar semillas de este departamento
         mask = df_semillas['departamento_nombre'] == depto
+        #print(f"Registros de semillas en {depto}: {mask.sum()}")
 
         for variable in ['temperatura_media_C','humedad_relativa_%',
                  'velocidad_viento_m_s','velocidad_viento_km_h',
                  'precipitacion_mm_mes']:
+            
+            #df_semillas[variable] = df_semillas[variable].astype(object)
 
-            df_semillas.loc[mask, variable] = df_semillas.loc[mask, 'anio'].apply(
-            lambda anio: df_clima_filtrado[df_clima_filtrado['fecha'] < anio][variable]
-                      .tail(n_meses)
-                      .tolist()
-            )
+            def obtener_clima_previo(año_siembra):
+                """
+                Obtiene los últimos n_meses de datos climáticos anteriores al año de siembra
+                """
+                # Crear fecha límite: 31 de diciembre del año anterior
+                fecha_limite = pd.Timestamp(year=año_siembra-1, month=12, day=31)
+                
+                # Filtrar datos anteriores a la fecha límite
+                clima_previo = df_clima_filtrado[df_clima_filtrado['fecha'] <= fecha_limite]
+                
+                if len(clima_previo) == 0:
+                    print(f"⚠️ No hay datos climáticos para {depto} antes de {año_siembra}")
+                    return []
+                
+                # Tomar los últimos n_meses y retornar como lista
+                valores = clima_previo[variable].tail(n_meses).tolist()
+                
+                # Si no tenemos suficientes meses, rellenar con NaN
+                while len(valores) < n_meses:
+                    valores = [np.nan] + valores
+                
+                return valores
+
+            # Aplicar la función a cada año de siembra en este departamento
+            df_semillas.loc[mask, variable] = df_semillas.loc[mask, 'anio'].apply(obtener_clima_previo)
 
     return df_semillas
 
 
 # -----------------------------
-# PROGRAMA
+# PROGRAMA PRINCIPAL
 # -----------------------------
 años_atras_ejemplo = 44
 
-# Preparo los archivos necesarios para entrenar el modelo
-
 # Recupero todos los datos de las semillas desde min_year en adelante
 df_semillas = pd.read_csv('Recuperacion_de_datos/Semillas/Archivos generados/semillas_todas_concatenadas.csv')
-# Aseguro que las semillas tengan al menos un año de datos climáticos previos
-df_semillas['anio'] = pd.to_datetime(df_semillas['anio'], errors='coerce')
-df_semillas = df_semillas[df_semillas['anio'].dt.year >= años_atras_ejemplo + 1] # Aseguramos que las semillas tengan al menos un año de datos climáticos previos.
+
+#print("DataFrame semillas original:")
+#print(f"Forma: {df_semillas.shape}")
+#print(f"AAAAAAAAAAAAAAAAAAAAAAA --- Tipo de anio: {df_semillas['anio'].dtype}")
+#print(f"Primeros valores de anio: {df_semillas['anio'].head()}")
+
+# Asegurar que las semillas tengan al menos un año de datos climáticos previos
+df_semillas = df_semillas[df_semillas['anio'] >= 1983] # Aseguramos que las semillas tengan al menos un año de datos climáticos previos.
+
+#print(f"Semillas después del filtro de años: {df_semillas.shape}")
+#df_semillas.to_csv('df_semillas_filtradas.csv', index=False)
 
 df_suelo = pd.read_csv('Recuperacion_de_datos/Suelos/suelo_unido.csv')
 
@@ -95,6 +141,8 @@ df_suelo = pd.read_csv('Recuperacion_de_datos/Suelos/suelo_unido.csv')
 # Elimino las columnas que tienen 85% o más datos faltantes
 df_suelo_filtrado = df_suelo.dropna(thresh=len(df_suelo) * 0.15, axis=1).copy()
 df_semillas_filtrado = df_semillas.dropna(thresh=len(df_semillas) * 0.15, axis=1).copy()
+
+#print(f"Semillas después del filtro de columnas: {df_semillas_filtrado.shape}")
 
 path_archivo_suelo = Path("Recuperacion_de_datos/Suelos/suelo_promedio.csv")
 
@@ -122,11 +170,16 @@ else:
 
     df_suelo_promedio.to_csv('Recuperacion_de_datos/Suelos/suelo_promedio.csv', index=False)
 
+#print(f"Departamentos en suelo_promedio: {len(df_suelo_promedio)}")
+#print(f"Departamentos únicos en semillas: {df_semillas_filtrado['departamento_nombre'].nunique()}")
+
 # Recupero clima para cada centroide de suelo_promedio
-n_meses = 18
+n_meses = 14
 df_semillas_con_clima = agregar_clima_por_departamento(
     df_semillas_filtrado, df_suelo_promedio, años_atras_ejemplo, n_meses
 )
+
+#print(f"Semillas con clima: {df_semillas_con_clima.shape}")
 
 df_final = pd.merge(
     df_semillas_con_clima,
@@ -135,4 +188,15 @@ df_final = pd.merge(
     how='inner'
 )
 
+#print(f"DataFrame final: {df_final.shape}")
+
+column_order = [
+    "cultivo_nombre", "anio", "departamento_nombre", "coords", "organic_carbon", "ph", "clay", "silt", "sand", 
+    "temperatura_media_C", "humedad_relativa_%", "velocidad_viento_m_s", "velocidad_viento_km_h", 
+    "precipitacion_mm_mes", "superficie_sembrada_ha",                               # Entradas
+    "superficie_cosechada_ha", "produccion_tn", "rendimiento_kgxha"                 # Salida esperada
+]
+df_final = df_final[column_order]
+
 df_final.to_csv('df_semillas_suelo_clima.csv', index=False)
+print("Archivo guardado exitosamente!")
