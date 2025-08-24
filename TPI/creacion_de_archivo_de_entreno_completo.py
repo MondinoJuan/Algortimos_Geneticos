@@ -190,6 +190,8 @@ df_final = pd.merge(
 
 #print(f"DataFrame final: {df_final.shape}")
 
+
+# Como ya no hay merges deberia sacar departamento_nombre y coords
 column_order = [
     "cultivo_nombre", "anio", "departamento_nombre", "coords", "organic_carbon", "ph", "clay", "silt", "sand", 
     "temperatura_media_C", "humedad_relativa_%", "velocidad_viento_m_s", "velocidad_viento_km_h", 
