@@ -10,7 +10,6 @@ import json
 import math
 import requests
 import time
-import tempfile
 from departamento import encontrar_departamento 
 
 class MapApp:
