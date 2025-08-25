@@ -7,7 +7,7 @@ precio_dolar = 1316
 
 # --------------------------------------------------------------------
 
-#funcion - obtengo:soja, maiz, trigo, sorgo, cebada y girasol
+#funcion - obtengo: soja, maiz, trigo, sorgo, cebada y girasol
 def obtener_precios_por_tonelada():
     fecha = datetime.now().date()
 

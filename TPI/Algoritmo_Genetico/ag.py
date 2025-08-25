@@ -16,12 +16,12 @@ Deberia usarse el problema de la mochila planteado en el TP2?
 def aleatorio():
     return random.randint(0, 1)
 
-def completoCromosoma(cantidad):
-    cromosoma = 
+def completoCromosoma(cantidad):                # Modificar     
+    cromosoma = 0
     pass
     return cromosoma
 
-def generarPoblacion(cantidadCromosomas, cantidadGenes):
+def generarPoblacion(cantidadCromosomas, cantidadGenes):            # Modificar
     poblacion = []
     pass
     return poblacion
@@ -35,11 +35,11 @@ def binarioADecimal(cromosoma):
         exponente += 1 
     return decimal
 
-def funcionObjetivo(x):
+def funcionObjetivo(x):                                 # Modificar
     pass
     return
 
-def calculadorFuncionObjetivo(poblacion):
+def calculadorFuncionObjetivo(poblacion):               # Modificar
     objetivos = []
     for individuo in poblacion:
         decimal = binarioADecimal(individuo)
@@ -47,7 +47,7 @@ def calculadorFuncionObjetivo(poblacion):
         objetivos.append(obj)
     return objetivos
 
-def calculadorFitness(objetivos):
+def calculadorFitness(objetivos):                   
     fitness = []
     suma = sum(objetivos)
     for fo in objetivos:
@@ -70,7 +70,7 @@ def crossover1Punto(padre, madre):
     return h1, h2
 
 # Mutacion
-def mutacionInvertida(poblacion, probMutacion):
+def mutacionInvertida(poblacion, probMutacion):         # Modificar mutacion
     for i in range(len(poblacion)):
         if random.random() < probMutacion:
             individuo = poblacion[i]
