@@ -6,6 +6,13 @@ import pandas as pd
 # Utiliza openpyxl tambien
 
 # GENERAL
+
+'''
+La idea es crear poblaciones con los mismos datos de suelo dependiendo del departamento y un clima predecido de aca a 14 meses,
+diferenciandose en la semilla utilizada y el área a cultivar por semilla.
+Deberia usarse el problema de la mochila planteado en el TP2?
+'''
+
 def aleatorio():
     return random.randint(0, 1)
 
