@@ -197,13 +197,8 @@ def procesar_datos_mensuales(df):
     
     return datos_mensuales
 
-# Ejemplo de uso
-if __name__ == "__main__":
-    # Coordenadas de ejemplo (Córdoba, Argentina)
-    latitud = -31.4
-    longitud = -64.2
-    años_atras = 44
-    
+
+def main(latitud, longitud, años_atras=44):
     #print("=== OBTENIENDO DATOS DIARIOS Y PROCESANDO MENSUALMENTE ===")
     # Obtener datos diarios
     df_clima_diario = obtener_datos_nasa_power(latitud, longitud, años_atras)
@@ -241,3 +236,16 @@ if __name__ == "__main__":
     else:
         print("\n❌ No se pudieron obtener datos de NASA POWER")
         print("Verifica las coordenadas y la conexión a internet")
+    
+    return df_clima
+
+# Ejemplo de uso
+if __name__ == "__main__":
+    # Coordenadas de ejemplo (Córdoba, Argentina)
+    latitud = -31.4
+    longitud = -64.2
+    años_atras = 44
+
+    main(latitud, longitud, años_atras)
+    
+    

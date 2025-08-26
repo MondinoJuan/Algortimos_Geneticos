@@ -6,10 +6,13 @@
 # ------------------------------------------------------------------------------------------------------------------------------------------------------
 
 import pandas as pd
+import os
 
 from Mapa.GIS.gis_optimizado import MapApp
 from creacion_de_archivo_de_entreno_completo import calcular_centroide
 from Red_neuronal.My_GBM import main as entrenar_GBM
+from Recuperacion_de_datos.Clima.Recupero_clima_NASA_Mensual import main as creo_clima_nasa
+from Algoritmo_Genetico.ag import main as ejecuto_ag
 
 
 
@@ -27,4 +30,16 @@ def __init__():
     # ENTRENO GBM
     entrenar_GBM()
 
+    # Entreno LSTM
+    if not os.path.exists("model/model.keras"):
+        if os.path.exists("Recuperacion_de_datos/Clima/clima_nasa_mensual_44_anios.csv"):
+            df_clima = pd.read_csv("Recuperacion_de_datos/Clima/clima_nasa_mensual_44_anios.csv")
+            # Entreno modelo de prediccion pasandole df_clima
+            #
+            #
+        else:
+            from Recuperacion_de_datos.Clima.Recupero_clima_NASA_Mensual import main as creo_archivo_clima
+            creo_archivo_clima(latitud, longitud)
+
     # EJECUTO EL AG CON EL GBM ENTRENADO COMO FUNCIÓN OBJETIVO
+    ejecuto_ag(departamento, longitud, latitud, metros_cuadrados)

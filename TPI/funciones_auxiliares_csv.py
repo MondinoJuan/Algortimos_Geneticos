@@ -58,9 +58,13 @@ def create_df_with_differents_outputs():
         "rendimiento_kgxha"                 # Salida esperada
     ]
 
-    df_con_cosecha = df_final[cols_cosecha]
-    df_con_prod = df_final[cols_prod]
-    df_con_rend = df_final[cols_rend]
+    df_con_cosecha = df_final[cols_cosecha].copy()
+    df_con_prod = df_final[cols_prod].copy()
+    df_con_rend = df_final[cols_rend].copy()
+
+    df_con_cosecha["cultivo_nombre"] = df_con_cosecha["cultivo_nombre"].str.lower()
+    df_con_prod["cultivo_nombre"] = df_con_prod["cultivo_nombre"].str.lower()
+    df_con_rend["cultivo_nombre"] = df_con_rend["cultivo_nombre"].str.lower()
 
     df_con_cosecha.to_csv('df_con_cosecha.csv', index=False)
     df_con_prod.to_csv('df_con_prod.csv', index=False)
@@ -69,7 +73,7 @@ def create_df_with_differents_outputs():
 
 if __name__ == "__main__":
 
-    # create_df_with_differents_outputs()
+    #create_df_with_differents_outputs()
 
     df = expand_array_columns("df_con_prod.csv")
     output_path = "df_prod_expandido.csv"

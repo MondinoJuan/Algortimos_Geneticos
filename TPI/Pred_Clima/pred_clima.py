@@ -9,10 +9,10 @@ from keras.layers import Dense, InputLayer, LSTM
 from keras.callbacks import ModelCheckpoint
 from keras.optimizers import Adam
 from keras.models import load_model
-
+from Recuperacion_de_datos.Clima.Recupero_clima_NASA_Mensual import main as creo_archivo_clima
 
 # Load data
-data = pd.read_csv("Recuperacion_de_datos/Clima/clima_nasa_mensual_44_anios.csv")
+data = creo_archivo_clima( -34.6037, -58.3816 )  # Example coordinates for Buenos Aires
 split_idx = int(len(data) * 0.85)
 train = data.iloc[:split_idx].reset_index(drop=True)
 test = data.iloc[split_idx:].reset_index(drop=True)
