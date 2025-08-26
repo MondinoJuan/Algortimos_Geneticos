@@ -43,7 +43,7 @@ def train_neural_network(X, y, epochs=100, learning_rate=0.001):
         Dense(1, 'linear')
     ])
     
-    checkpoint = ModelCheckpoint("model/model.keras", save_best_only=True, monitor='val_loss')
+    checkpoint = ModelCheckpoint("model/model_temp.keras", save_best_only=True, monitor='val_loss')
     model.compile(loss=MeanSquaredError(), optimizer=Adam(learning_rate=learning_rate), metrics=[RootMeanSquaredError()])
     model.fit(X, y, epochs=epochs, callbacks=[checkpoint])
 
@@ -51,7 +51,7 @@ train_neural_network(train_input, train_output)
 
 
 # Predictions
-model = load_model("model/model.keras")
+model = load_model("model/model_temp.keras")
 
 train_pred = model.predict(train_input)
 test_pred = model.predict(test_input)
