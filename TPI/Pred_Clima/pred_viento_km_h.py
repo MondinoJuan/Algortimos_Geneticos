@@ -14,6 +14,23 @@ from Recuperacion_de_datos.Clima.Recupero_clima_NASA_Mensual import main as creo
 WINDOW_SIZE = 30
 scaler = MinMaxScaler()
 
+def separar_fecha(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Reemplaza la columna 'fecha' (formato YYYY-MM-DD)
+    por dos columnas: 'anio' y 'mes'.
+    """
+    # Convertir a datetime
+    df['fecha'] = pd.to_datetime(df['fecha'], format='%Y-%m-%d')
+
+    # Crear nuevas columnas
+    df['anio'] = df['fecha'].dt.year
+    df['mes'] = df['fecha'].dt.month
+
+    # Eliminar la columna original
+    df = df.drop(columns=['fecha'])
+
+    return df
+
 def plot_predictions(pred, y_true, label, period):
     period = pd.to_datetime(period)
     plt.figure(figsize=(10, 6))

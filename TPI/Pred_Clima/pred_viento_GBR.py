@@ -27,6 +27,23 @@ def guardar_modelo(modelo, ruta="Modelos_GB/modelo_gbm_viento.pkl"):
     joblib.dump(modelo, ruta)
     print(f"Modelo guardado en {ruta}")
 
+def separar_fecha(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Reemplaza la columna 'fecha' (formato YYYY-MM-DD)
+    por dos columnas: 'anio' y 'mes'.
+    """
+    # Convertir a datetime
+    df['fecha'] = pd.to_datetime(df['fecha'], format='%Y-%m-%d')
+
+    # Crear nuevas columnas
+    df['anio'] = df['fecha'].dt.year
+    df['mes'] = df['fecha'].dt.month
+
+    # Eliminar la columna original
+    df = df.drop(columns=['fecha'])
+
+    return df
+
 
 def entrenar_y_devolver_modelo(head_cant = None):
     # DATA PREPARATION
@@ -37,11 +54,15 @@ def entrenar_y_devolver_modelo(head_cant = None):
 
     df_convertido = limpiar_df(df)
 
+    df_convertido = separar_fecha(df_convertido)
+
     df_train, df_test = np.split(df_convertido, [int(0.8*len(df_convertido))])
 
-    X_train = df_train[['velocidad_viento_m_s']]
+    #X_train = df_train[['anio', 'mes', 'velocidad_viento_m_s']]
+    X_train = df_train[['anio', 'mes']]
 
-    X_test = df_test[['velocidad_viento_m_s']]
+    #X_test = df_test[['anio', 'mes', 'velocidad_viento_m_s']]
+    X_test = df_test[['anio', 'mes']]
 
     y_train = df_train['velocidad_viento_m_s']
     y_test = df_test['velocidad_viento_m_s']

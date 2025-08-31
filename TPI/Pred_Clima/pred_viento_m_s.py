@@ -15,6 +15,23 @@ BATCH_SIZE = 32
 
 scaler = StandardScaler()
 
+def separar_fecha(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Reemplaza la columna 'fecha' (formato YYYY-MM-DD)
+    por dos columnas: 'anio' y 'mes'.
+    """
+    # Convertir a datetime
+    df['fecha'] = pd.to_datetime(df['fecha'], format='%Y-%m-%d')
+
+    # Crear nuevas columnas
+    df['anio'] = df['fecha'].dt.year
+    df['mes'] = df['fecha'].dt.month
+
+    # Eliminar la columna original
+    df = df.drop(columns=['fecha'])
+
+    return df
+
 def load_and_preprocess(csv_path, col_name):
     """Carga datos de viento y los normaliza"""
     data = pd.read_csv(csv_path, parse_dates=["fecha"])
