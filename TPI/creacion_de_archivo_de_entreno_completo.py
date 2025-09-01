@@ -67,7 +67,7 @@ def agregar_clima_por_departamento(df_semillas, df_suelo_promedio, años_atras_e
         # Obtener clima para este centroide
         df_clima_diario = obtener_datos_nasa_power(lat, lon, años_atras_ejemplo)
         if df_clima_diario.empty:
-            print(f"⚠️ No se encontraron datos climáticos para {depto}")
+            print(f"No se encontraron datos climáticos para {depto}")
             continue
 
         df_clima = procesar_datos_mensuales(df_clima_diario)
@@ -82,7 +82,7 @@ def agregar_clima_por_departamento(df_semillas, df_suelo_promedio, años_atras_e
         #print(f"Registros de semillas en {depto}: {mask.sum()}")
 
         for variable in ['temperatura_media_C','humedad_relativa_%',
-                 'velocidad_viento_m_s','velocidad_viento_km_h',
+                 'velocidad_viento_m_s',
                  'precipitacion_mm_mes']:
             
             #df_semillas[variable] = df_semillas[variable].astype(object)
@@ -98,7 +98,7 @@ def agregar_clima_por_departamento(df_semillas, df_suelo_promedio, años_atras_e
                 clima_previo = df_clima_filtrado[df_clima_filtrado['fecha'] <= fecha_limite]
                 
                 if len(clima_previo) == 0:
-                    print(f"⚠️ No hay datos climáticos para {depto} antes de {año_siembra}")
+                    print(f"No hay datos climáticos para {depto} antes de {año_siembra}")
                     return []
                 
                 # Tomar los últimos n_meses y retornar como lista
@@ -195,9 +195,8 @@ df_final["cultivo_nombre"] = df_final["cultivo_nombre"].str.strip().str.lower()
 # Como ya no hay merges deberia sacar departamento_nombre y coords
 column_order = [
     "cultivo_nombre", "anio", "departamento_nombre", "coords", "organic_carbon", "ph", "clay", "silt", "sand", 
-    "temperatura_media_C", "humedad_relativa_%", "velocidad_viento_m_s", "velocidad_viento_km_h", 
-    "precipitacion_mm_mes", "superficie_sembrada_ha",                               # Entradas
-    "superficie_cosechada_ha", "produccion_tn", "rendimiento_kgxha"                 # Salida esperada
+    "temperatura_media_C", "humedad_relativa_%", "velocidad_viento_m_s", "precipitacion_mm_mes", "superficie_sembrada_ha",                               # Entradas
+    "superficie_cosechada_ha", "produccion_tn", "rendimiento_kgxha"                                                                                      # Salida esperada
 ]
 df_final = df_final[column_order]
 

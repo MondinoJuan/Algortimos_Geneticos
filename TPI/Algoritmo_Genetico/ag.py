@@ -46,7 +46,7 @@ def funcionObjetivo(x, precio):
     obj = x * precio  
     return obj
 
-def calculadorFuncionObjetivo(poblacion): 
+def calculadorFuncionObjetivo(poblacion, depto, lon, lat): 
     objetivos = []
 
     # Recupero precios de la tonelada de semilla
@@ -55,7 +55,7 @@ def calculadorFuncionObjetivo(poblacion):
     df_precios = df_precios.iloc[:, [1, 2]]
 
     for individuo in poblacion:
-        toneladas = red_neuronal(individuo)
+        toneladas = red_neuronal(individuo, depto, lon, lat)
         for idx, semilla in enumerate(SEMILLAS):
             precio = df_precios[df_precios.iloc[:, 0] == semilla].iloc[0, 1]
             obj = funcionObjetivo(toneladas[idx], precio)
@@ -84,24 +84,21 @@ def red_neuronal(individuo, depto, lon, lat):
         }, ignore_index=True)
 
     cols = [['cultivo_nombre', 'anio', 'organic_carbon', 'ph', 'clay', 'silt', 'sand', 
-                        'temperatura_media_C_1', 'temperatura_media_C_2', 'temperatura_media_C_3', 'temperatura_media_C_4', 
-                        'temperatura_media_C_5', 'temperatura_media_C_6', 'temperatura_media_C_7', 'temperatura_media_C_8', 
-                        'temperatura_media_C_9', 'temperatura_media_C_10', 'temperatura_media_C_11', 'temperatura_media_C_12', 
-                        'temperatura_media_C_13', 'temperatura_media_C_14', 'humedad_relativa_%_1', 'humedad_relativa_%_2', 
-                        'humedad_relativa_%_3', 'humedad_relativa_%_4', 'humedad_relativa_%_5', 'humedad_relativa_%_6', 
-                        'humedad_relativa_%_7', 'humedad_relativa_%_8', 'humedad_relativa_%_9', 'humedad_relativa_%_10', 
-                        'humedad_relativa_%_11', 'humedad_relativa_%_12', 'humedad_relativa_%_13', 'humedad_relativa_%_14', 
-                        'velocidad_viento_m_s_1', 'velocidad_viento_m_s_2', 'velocidad_viento_m_s_3', 'velocidad_viento_m_s_4', 
-                        'velocidad_viento_m_s_5', 'velocidad_viento_m_s_6', 'velocidad_viento_m_s_7', 'velocidad_viento_m_s_8', 
-                        'velocidad_viento_m_s_9', 'velocidad_viento_m_s_10', 'velocidad_viento_m_s_11', 'velocidad_viento_m_s_12', 
-                        'velocidad_viento_m_s_13', 'velocidad_viento_m_s_14', 'velocidad_viento_km_h_1', 'velocidad_viento_km_h_2', 
-                        'velocidad_viento_km_h_3', 'velocidad_viento_km_h_4', 'velocidad_viento_km_h_5', 'velocidad_viento_km_h_6', 
-                        'velocidad_viento_km_h_7', 'velocidad_viento_km_h_8', 'velocidad_viento_km_h_9', 'velocidad_viento_km_h_10', 
-                        'velocidad_viento_km_h_11', 'velocidad_viento_km_h_12', 'velocidad_viento_km_h_13', 'velocidad_viento_km_h_14', 
-                        'precipitacion_mm_mes_1', 'precipitacion_mm_mes_2', 'precipitacion_mm_mes_3', 'precipitacion_mm_mes_4', 
-                        'precipitacion_mm_mes_5', 'precipitacion_mm_mes_6', 'precipitacion_mm_mes_7', 'precipitacion_mm_mes_8', 
-                        'precipitacion_mm_mes_9', 'precipitacion_mm_mes_10', 'precipitacion_mm_mes_11', 'precipitacion_mm_mes_12', 
-                        'precipitacion_mm_mes_13', 'precipitacion_mm_mes_14', 'superficie_sembrada_ha']]
+                    'temperatura_media_C_1', 'temperatura_media_C_2', 'temperatura_media_C_3', 'temperatura_media_C_4', 
+                    'temperatura_media_C_5', 'temperatura_media_C_6', 'temperatura_media_C_7', 'temperatura_media_C_8', 
+                    'temperatura_media_C_9', 'temperatura_media_C_10', 'temperatura_media_C_11', 'temperatura_media_C_12', 
+                    'temperatura_media_C_13', 'temperatura_media_C_14', 'humedad_relativa_%_1', 'humedad_relativa_%_2', 
+                    'humedad_relativa_%_3', 'humedad_relativa_%_4', 'humedad_relativa_%_5', 'humedad_relativa_%_6', 
+                    'humedad_relativa_%_7', 'humedad_relativa_%_8', 'humedad_relativa_%_9', 'humedad_relativa_%_10', 
+                    'humedad_relativa_%_11', 'humedad_relativa_%_12', 'humedad_relativa_%_13', 'humedad_relativa_%_14', 
+                    'velocidad_viento_m_s_1', 'velocidad_viento_m_s_2', 'velocidad_viento_m_s_3', 'velocidad_viento_m_s_4', 
+                    'velocidad_viento_m_s_5', 'velocidad_viento_m_s_6', 'velocidad_viento_m_s_7', 'velocidad_viento_m_s_8', 
+                    'velocidad_viento_m_s_9', 'velocidad_viento_m_s_10', 'velocidad_viento_m_s_11', 'velocidad_viento_m_s_12', 
+                    'velocidad_viento_m_s_13', 'velocidad_viento_m_s_14', 'precipitacion_mm_mes_1', 'precipitacion_mm_mes_2', 
+                    'precipitacion_mm_mes_3', 'precipitacion_mm_mes_4', 'precipitacion_mm_mes_5', 'precipitacion_mm_mes_6', 
+                    'precipitacion_mm_mes_7', 'precipitacion_mm_mes_8', 'precipitacion_mm_mes_9', 'precipitacion_mm_mes_10', 
+                    'precipitacion_mm_mes_11', 'precipitacion_mm_mes_12', 'precipitacion_mm_mes_13', 'precipitacion_mm_mes_14', 
+                    'superficie_sembrada_ha']]
     df_final = df_final[cols]
     
     predicciones_toneladas = utilizar_GBM(df_final)
@@ -201,7 +198,7 @@ def seleccionTorneo(poblacion, fitnessValores, cantidadIndividuos, cantidadCompe
 
 # CICLOS
 # Elitismo
-def ciclos_con_elitismo(ciclos, prob_crossover, prob_mutacion, cant_individuos, cant_genes, metodo_seleccion, cantidadElitismo, 
+def ciclos_con_elitismo(depto, lat, lon, area_m2, ciclos, prob_crossover, prob_mutacion, cant_individuos, cant_genes, metodo_seleccion, cantidadElitismo, 
                         cantidadCompetidores=None):
     maximos=[]
     minimos=[]
@@ -209,7 +206,7 @@ def ciclos_con_elitismo(ciclos, prob_crossover, prob_mutacion, cant_individuos, 
     mejores=[]
     
     pob = generarPoblacion(cantidadIndividuos,cant_genes) #Poblacion inicial random
-    fo = calculadorFuncionObjetivo(pob)
+    fo = calculadorFuncionObjetivo(pob, depto, lon, lat)
     fit = calculadorFitness(fo)
     rta = calculadorEstadisticos(pob, fo)
 
@@ -237,14 +234,14 @@ def ciclos_con_elitismo(ciclos, prob_crossover, prob_mutacion, cant_individuos, 
             padre = pob_intermedia[i]
             madre = pob_intermedia[i+1]
             if random.random() < prob_crossover :
-                hijo1, hijo2 = crossover1Punto(padre,madre)
+                hijo1, hijo2 = crossover1Punto(padre, madre, area_m2)
                 pob_intermedia[i], pob_intermedia[i+1] = hijo1, hijo2
             
         pob_intermedia = mutacionInvertida(pob_intermedia, prob_mutacion)
         
         pob = pob_intermedia + elitistas
         
-        fo = calculadorFuncionObjetivo(pob)
+        fo = calculadorFuncionObjetivo(pob, depto, lon, lat)
         fit = calculadorFitness(fo)
         rta = calculadorEstadisticos(pob, fo)
         #GUARDAR VALORES NECESARIOS PARA LA GRAFICA
@@ -256,7 +253,7 @@ def ciclos_con_elitismo(ciclos, prob_crossover, prob_mutacion, cant_individuos, 
     return maximos, minimos, promedios, mejores
 
 # Sin elitismo
-def ciclos_sin_elitismo(ciclos, prob_crossover, prob_mutacion, cantidadIndividuos, cant_genes, metodo_seleccion, 
+def ciclos_sin_elitismo(depto, lat, lon, area_m2, ciclos, prob_crossover, prob_mutacion, cantidadIndividuos, cant_genes, metodo_seleccion, 
                         cantidadCompetidores=None):
     maximos=[]
     minimos=[]
@@ -264,7 +261,7 @@ def ciclos_sin_elitismo(ciclos, prob_crossover, prob_mutacion, cantidadIndividuo
     mejores=[]
     
     pob = generarPoblacion(cantidadIndividuos, cant_genes)
-    fo = calculadorFuncionObjetivo(pob)
+    fo = calculadorFuncionObjetivo(pob, depto, lon, lat)
     fit = calculadorFitness(fo)
     rta = calculadorEstadisticos(pob, fo)
     
@@ -283,10 +280,10 @@ def ciclos_sin_elitismo(ciclos, prob_crossover, prob_mutacion, cantidadIndividuo
                 padre = pob[i]
                 madre = pob[i+1]
             if random.random() < prob_crossover :
-                hijo1, hijo2 = crossover1Punto(padre,madre)
+                hijo1, hijo2 = crossover1Punto(padre, madre, area_m2)
                 pob[i], pob[i+1] = hijo1, hijo2
         pob = mutacionInvertida(pob, prob_mutacion)
-        fo = calculadorFuncionObjetivo(pob)
+        fo = calculadorFuncionObjetivo(pob, depto, lon, lat)
         fit = calculadorFitness(fo)
         rta = calculadorEstadisticos(pob, fo)
 
@@ -398,7 +395,7 @@ def main(depto, lat, lon, area_m2):
             print("Por favor, ingrese '1' para sí o '0' para no.")
     
     if elitismo == 1:
-        maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores = ciclos_con_elitismo(ciclos, probCrossover, probMutacion, 
+        maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores = ciclos_con_elitismo(depto, lat, lon, area_m2, ciclos, probCrossover, probMutacion, 
                                                                                            cantidadIndividuos, cantidadGenes, 
                                                                                            seleccion, 
                                                                                            cantidadElitismo, cantidadCompetidores)
@@ -409,7 +406,7 @@ def main(depto, lat, lon, area_m2):
         generar_grafico(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, titulo, ciclos)
         crear_tabla(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, seleccion, elitismo)
     else:
-        maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores = ciclos_sin_elitismo(ciclos, probCrossover, probMutacion, 
+        maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores = ciclos_sin_elitismo(depto, lat, lon, area_m2, ciclos, probCrossover, probMutacion, 
                                                                                            cantidadIndividuos, cantidadGenes, 
                                                                                            seleccion, cantidadCompetidores)
         if seleccion == 'r':

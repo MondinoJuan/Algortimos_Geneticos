@@ -39,21 +39,21 @@ def create_df_with_differents_outputs():
 
     cols_cosecha = [
         "cultivo_nombre", "anio", "organic_carbon", "ph", "clay", "silt", "sand", 
-        "temperatura_media_C", "humedad_relativa_%", "velocidad_viento_m_s", "velocidad_viento_km_h", 
+        "temperatura_media_C", "humedad_relativa_%", "velocidad_viento_m_s", 
         "precipitacion_mm_mes", "superficie_sembrada_ha",                               # Entradas
         "superficie_cosechada_ha"                 # Salida esperada
     ]
 
     cols_prod = [
         "cultivo_nombre", "anio", "organic_carbon", "ph", "clay", "silt", "sand", 
-        "temperatura_media_C", "humedad_relativa_%", "velocidad_viento_m_s", "velocidad_viento_km_h", 
+        "temperatura_media_C", "humedad_relativa_%", "velocidad_viento_m_s", 
         "precipitacion_mm_mes", "superficie_sembrada_ha",                               # Entradas
         "produccion_tn"                 # Salida esperada
     ]
 
     cols_rend = [
         "cultivo_nombre", "anio", "organic_carbon", "ph", "clay", "silt", "sand", 
-        "temperatura_media_C", "humedad_relativa_%", "velocidad_viento_m_s", "velocidad_viento_km_h", 
+        "temperatura_media_C", "humedad_relativa_%", "velocidad_viento_m_s", 
         "precipitacion_mm_mes", "superficie_sembrada_ha",                               # Entradas
         "rendimiento_kgxha"                 # Salida esperada
     ]
@@ -73,7 +73,7 @@ def create_df_with_differents_outputs():
 
 if __name__ == "__main__":
 
-    #create_df_with_differents_outputs()
+    create_df_with_differents_outputs()
 
     df = expand_array_columns("df_con_prod.csv")
     output_path = "df_prod_expandido.csv"

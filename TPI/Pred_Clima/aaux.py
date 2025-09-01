@@ -47,8 +47,7 @@ df['viento_lag1'] = df['velocidad_viento_m_s'].shift(1)
 
 #train_LSTM_temp(df_clima)
 #train_LSTM_humedad(df_clima)
-train_LSTM_precip(df)
-#modelo = entrenar_y_devolver_modelo()
+#train_LSTM_precip(df_clima)
 
 
 '''
