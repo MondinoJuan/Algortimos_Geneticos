@@ -23,7 +23,7 @@ def limpiar_df(df: pd.DataFrame) -> pd.DataFrame:
 
     return df_limpio
 
-def guardar_modelo(modelo, ruta="Modelos_GB/modelo_gbm_viento_m_s.pkl"):
+def guardar_modelo(modelo, ruta="model/modelo_gbm_viento_m_s.pkl"):
     joblib.dump(modelo, ruta)
     print(f"Modelo guardado en {ruta}")
 
@@ -120,7 +120,7 @@ def main(entradas_para_predecir = None, modelo = None):
         modelo = entrenar_y_devolver_modelo(head_cant)
     else:
         # Cargar modelo guardado
-        #modelo = joblib.load("Modelos_GB/modelo_gbm_viento.pkl")
+        modelo = joblib.load("model/modelo_gbm_viento_m_s.pkl")
 
         df = limpiar_df(entradas_para_predecir)
         df = separar_fecha(df)

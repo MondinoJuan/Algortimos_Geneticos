@@ -18,25 +18,20 @@ def plot_predictions(pred, y_true, label, period) :
     # Convert period to datetime if it's not already
     period = pd.to_datetime(period)
 
-    # Plotting
     plt.figure(figsize=(10, 6))
     plt.plot(period, y_true, label='True Values', marker='o', color='black')
     plt.plot(period, pred, label='Predictions', marker='o', color='red')
 
-    # Adding labels and title
     plt.xlabel('Date')
     plt.ylabel('Mean temperature' )
     plt.title(label)
 
-    # Adding legend
     plt.legend()
 
     if label == "Train Data":
-        # Format X-axis to show only years
         plt.gca().xaxis.set_major_locator(YearLocator())
         plt.gca().xaxis.set_major_formatter(DateFormatter('%Y'))
     elif label == "Test Data":
-        # Format X-axis to show only months
         plt.gca().xaxis.set_major_locator(MonthLocator())
         plt.gca().xaxis.set_major_formatter(DateFormatter('%b %Y' ) )
 
