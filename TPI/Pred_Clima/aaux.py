@@ -11,8 +11,6 @@ df_clima = pd.read_csv(path)
 #train_LSTM_temp(df_clima)
 #train_LSTM_humedad(df_clima)
 #train_LSTM_precip(df_clima)
-#modelo = entrenar_y_devolver_modelo()
-
 
 
 # DATA PREPARATION
