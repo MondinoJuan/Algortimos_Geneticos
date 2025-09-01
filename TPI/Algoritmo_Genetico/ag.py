@@ -4,8 +4,14 @@ import sys
 import matplotlib.pyplot as plt
 import pandas as pd
 # Utiliza openpyxl tambien
+import numpy as np
 
-from Red_neuronal.My_GBM import main as utilizar_GBM
+import pickle
+with open("model/cultivo_a_entero.pkl", "rb") as f:
+    cultivo_a_entero = pickle.load(f)
+
+from Red_neuronal.My_GBM import main as utilizar_GBM, limpiar_df
+from Pred_Clima.pred_cond_climaticas import main as predecir_datos_clima  
 
 # GENERAL
 '''
@@ -14,16 +20,14 @@ diferenciandose en la semilla utilizada y el área a cultivar por semilla.
 Deberia usarse el problema de la mochila planteado en el TP2?
 '''
 
-SEMILLAS = ['girasol', 'soja', 'maiz', 'trigo', 'sorgo', 'cebada', 'maní']
-
-def aleatorio():
-    return random.randint(0, 1)
+SEMILLAS = ['girasol', 'soja', 'maíz', 'trigo', 'sorgo', 'cebada', 'maní']
 
 def completoCromosoma(maximo, cantidad_genes=7):
     cromosoma = [random.random() for _ in range(cantidad_genes)]
     suma = sum(cromosoma)
     cromosoma = [(gen / suma) * maximo for gen in cromosoma]
     return cromosoma
+       
 
 def generarPoblacion(cantidadCromosomas, cantidadGenes, maximo):          
     poblacion = [] * cantidadCromosomas
@@ -31,15 +35,6 @@ def generarPoblacion(cantidadCromosomas, cantidadGenes, maximo):
         cromosoma = completoCromosoma(maximo, cantidadGenes)
         poblacion.append(cromosoma)
     return poblacion
-
-def binarioADecimal(cromosoma):
-    decimal = 0
-    exponente=0
-    for i in range(len(cromosoma)-1,-1,-1):
-        if cromosoma[i] == 1:
-            decimal = decimal + pow(2,exponente)
-        exponente += 1 
-    return decimal
 
 def funcionObjetivo(x, precio):
     # Pasa por la red neuronal
@@ -50,14 +45,17 @@ def calculadorFuncionObjetivo(poblacion, depto, lon, lat):
     objetivos = []
 
     # Recupero precios de la tonelada de semilla
-    df_precios = pd.read_csv("Recuperacion_de_datos/Semillas/Archivos generados/precios_por_tonelada.csv")
-    df_precios = df_precios.tail(7)
-    df_precios = df_precios.iloc[:, [1, 2]]
+    from Recuperacion_de_datos.Semillas.recuperar_precio_tonelada import recuperar_precios
+    #df_precios = pd.read_csv("Recuperacion_de_datos/Semillas/Archivos generados/precios_por_tonelada.csv")
+    lista_precios = recuperar_precios()
+    #df_precios = df_precios.tail(7)
+    lista_precios_hoy = [fila[1:] for fila in lista_precios]
+    precios_dict = dict(lista_precios_hoy)
 
     for individuo in poblacion:
         toneladas = red_neuronal(individuo, depto, lon, lat)
         for idx, semilla in enumerate(SEMILLAS):
-            precio = df_precios[df_precios.iloc[:, 0] == semilla].iloc[0, 1]
+            precio = float(precios_dict.get(semilla))
             obj = funcionObjetivo(toneladas[idx], precio)
         objetivos.append(obj)
     return objetivos
@@ -68,22 +66,31 @@ def red_neuronal(individuo, depto, lon, lat):
     df_suelo = df_suelo[df_suelo['departamento_nombre'] == depto]
 
     # Uno con datos predecidos del clima
-    from keras.models import load_model
-    model = load_model("model/model.keras")
-    predicciones_clima = model.predict(lon, lat)
+    df_predicciones_clima = predecir_datos_clima()
 
     # Creo el dataframe final para pasar a la red neuronal
     df_final = pd.DataFrame()
-    for area in individuo:
-        df_final = df_final.append({
-            'superficie_sembrada_ha': area,
-            **df_suelo.iloc[0].to_dict(),
-            **predicciones_clima.to_dict(), 
-            'cultivo_nombre': SEMILLAS[individuo.index(area)],
-            'anio': 2025
-        }, ignore_index=True)
+    filas = []
+        
+    for idx, area in enumerate(individuo):
+        anio = 2025 if idx < 4 else 2026
 
-    cols = [['cultivo_nombre', 'anio', 'organic_carbon', 'ph', 'clay', 'silt', 'sand', 
+        # Convertir columnas de suelo y clima a float
+        suelo_dict = {k: (float(v) if k != 'departamento_nombre' and k != 'coords' else v) for k, v in df_suelo.iloc[0].to_dict().items()}
+        clima_dict = {k: float(v) for k, v in df_predicciones_clima.iloc[0].to_dict().items()}
+
+        fila = {
+            'superficie_sembrada_ha': float(area),
+            **suelo_dict,
+            **clima_dict,
+            'cultivo_nombre': int(cultivo_a_entero[SEMILLAS[idx]]),
+            'anio': int(anio)
+        }
+        filas.append(fila)
+
+    df_final = pd.DataFrame(filas)
+
+    cols = ['cultivo_nombre', 'anio', 'organic_carbon', 'ph', 'clay', 'silt', 'sand', 
                     'temperatura_media_C_1', 'temperatura_media_C_2', 'temperatura_media_C_3', 'temperatura_media_C_4', 
                     'temperatura_media_C_5', 'temperatura_media_C_6', 'temperatura_media_C_7', 'temperatura_media_C_8', 
                     'temperatura_media_C_9', 'temperatura_media_C_10', 'temperatura_media_C_11', 'temperatura_media_C_12', 
@@ -98,12 +105,11 @@ def red_neuronal(individuo, depto, lon, lat):
                     'precipitacion_mm_mes_3', 'precipitacion_mm_mes_4', 'precipitacion_mm_mes_5', 'precipitacion_mm_mes_6', 
                     'precipitacion_mm_mes_7', 'precipitacion_mm_mes_8', 'precipitacion_mm_mes_9', 'precipitacion_mm_mes_10', 
                     'precipitacion_mm_mes_11', 'precipitacion_mm_mes_12', 'precipitacion_mm_mes_13', 'precipitacion_mm_mes_14', 
-                    'superficie_sembrada_ha']]
+                    'superficie_sembrada_ha']
     df_final = df_final[cols]
     
     predicciones_toneladas = utilizar_GBM(df_final)
     return predicciones_toneladas
-    
 
 
 def calculadorFitness(objetivos):                   
@@ -205,7 +211,7 @@ def ciclos_con_elitismo(depto, lat, lon, area_m2, ciclos, prob_crossover, prob_m
     promedios=[]
     mejores=[]
     
-    pob = generarPoblacion(cantidadIndividuos,cant_genes) #Poblacion inicial random
+    pob = generarPoblacion(cantidadIndividuos, cant_genes, area_m2) #Poblacion inicial random
     fo = calculadorFuncionObjetivo(pob, depto, lon, lat)
     fit = calculadorFitness(fo)
     rta = calculadorEstadisticos(pob, fo)
@@ -249,6 +255,31 @@ def ciclos_con_elitismo(depto, lat, lon, area_m2, ciclos, prob_crossover, prob_m
         minimos.append(rta[1])
         promedios.append(rta[2])
         mejores.append(rta[3])
+
+        suma = [0] * 7
+        total = 0.0
+        for x in pob:
+            suma[0] += x[0]
+            suma[1] += x[1]
+            suma[2] += x[2]
+            suma[3] += x[3]
+            suma[4] += x[4]
+            suma[5] += x[5]
+            suma[6] += x[6]
+
+            total = suma[0] + suma[1] + suma[2] + suma[3] + suma[4] + suma[5] + suma[6]
+
+
+        print(f"------------------ ITERACION: {j} ----------------------------")
+        print(f"\n GIRASOL: {mejores[-1][0]} || total: {suma[0]}")
+        print(f"\n SOJA: {mejores[-1][1]} || total: {suma[1]}")
+        print(f"\n MAIZ: {mejores[-1][2]} || total: {suma[2]}")
+        print(f"\n TRIGO: {mejores[-1][3]} || total: {suma[3]}")
+        print(f"\n SORGO: {mejores[-1][4]} || total: {suma[4]}")
+        print(f"\n CEBADA: {mejores[-1][5]} || total: {suma[5]}")
+        print(f"\n MANI: {mejores[-1][6]} || total: {suma[6]}")
+        print(f"\n TOTAL DE M2: {total}")
+        print("----------------------------------------------")
         
     return maximos, minimos, promedios, mejores
 
@@ -260,7 +291,7 @@ def ciclos_sin_elitismo(depto, lat, lon, area_m2, ciclos, prob_crossover, prob_m
     promedios=[]
     mejores=[]
     
-    pob = generarPoblacion(cantidadIndividuos, cant_genes)
+    pob = generarPoblacion(cantidadIndividuos, cant_genes, area_m2)
     fo = calculadorFuncionObjetivo(pob, depto, lon, lat)
     fit = calculadorFitness(fo)
     rta = calculadorEstadisticos(pob, fo)
@@ -295,9 +326,9 @@ def ciclos_sin_elitismo(depto, lat, lon, area_m2, ciclos, prob_crossover, prob_m
     return maximos, minimos, promedios, mejores
 
 # TABLAS EXCEL
-def crear_tabla(maximos, minimos, promedios, mejores, metodo_seleccion, elitismo_Bool):
+'''def crear_tabla(maximos, minimos, promedios, mejores, metodo_seleccion, elitismo_Bool):
     cadenas = [''.join(str(num) for num in cromosoma) for cromosoma in mejores]
-    decimales = [str(binarioADecimal(cromosoma)) for cromosoma in mejores]
+    decimales = [str(cromosoma) for cromosoma in mejores]
 
     nombreMetodo = ''
     nombreElitismo = ''
@@ -326,9 +357,9 @@ def crear_tabla(maximos, minimos, promedios, mejores, metodo_seleccion, elitismo
         os.remove(archivo_excel)
         df_nuevo.to_excel(archivo_excel, index=False)
     else:
-        df_nuevo.to_excel(archivo_excel, index=False)
+        df_nuevo.to_excel(archivo_excel, index=False)'''
 
-# GRAFICOS
+'''# GRAFICOS
 def generar_grafico(maximos, minimos, promedios, mejores, titulo, ciclo):
     x = list(range(len(maximos)))
 
@@ -357,7 +388,7 @@ def verificar_maximo(datos):
             print(f"Dato menor encontrado en índice {i}: {datos[i]} < {datos[i - 1]}")
             break
     else:
-        print("Todos los datos son mayores o iguales a sus antecesores.")
+        print("Todos los datos son mayores o iguales a sus antecesores.")'''
 
 
 
@@ -403,8 +434,8 @@ def main(depto, lat, lon, area_m2):
             titulo = 'Seleccion RULETA ELITISTA - de '+ str(ciclos) + ' ciclos'
         else:
             titulo = 'Seleccion TORNEO ELITISTA - de '+ str(ciclos) + ' ciclos'
-        generar_grafico(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, titulo, ciclos)
-        crear_tabla(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, seleccion, elitismo)
+        #generar_grafico(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, titulo, ciclos)
+        #crear_tabla(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, seleccion, elitismo)
     else:
         maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores = ciclos_sin_elitismo(depto, lat, lon, area_m2, ciclos, probCrossover, probMutacion, 
                                                                                            cantidadIndividuos, cantidadGenes, 
@@ -413,8 +444,8 @@ def main(depto, lat, lon, area_m2):
             titulo = 'Seleccion RULETA - de '+ str(ciclos) + ' ciclos'
         else:
             titulo = 'Seleccion TORNEO - de '+ str(ciclos) + ' ciclos'
-        generar_grafico(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, titulo, ciclos)
-        crear_tabla(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, seleccion, elitismo)
+        #generar_grafico(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, titulo, ciclos)
+        #crear_tabla(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, seleccion, elitismo)
 
 
 
@@ -430,4 +461,11 @@ maximosPorCiclo = []
 minimosPorCiclo = []
 promediosPorCiclo = []
 
-verificar_maximo(maximosPorCiclo)
+latitud = -31.4
+longitud = -64.2
+departamento = "San Nicolás"
+area_m2 = 1900
+
+main(departamento, latitud, longitud, area_m2)
+
+#verificar_maximo(maximosPorCiclo)

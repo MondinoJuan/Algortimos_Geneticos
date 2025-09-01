@@ -10,7 +10,7 @@ import json
 import math
 import requests
 import time
-from departamento import encontrar_departamento 
+from Mapa.GIS.departamento import encontrar_departamento
 
 class MapApp:
     def __init__(self):
@@ -377,6 +377,13 @@ class MapApp:
     def run(self):
         """Ejecutar aplicación"""
         self.root.mainloop()
+
+
+def correr_app():
+    app = MapApp()
+    app.run()
+
+    return app
 
 if __name__ == "__main__":
     try:

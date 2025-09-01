@@ -180,7 +180,6 @@ def main(entradas_para_predecir = None):
         # Cargar modelo guardado
         modelo = joblib.load("model/modelo_gbm_completo.pkl")
         cultivo_a_entero = joblib.load("model/cultivo_a_entero.pkl")
-        entradas_conver = conversor_cultivo_a_entero(entradas_para_predecir, cultivo_a_entero)
-        predicciones = modelo.predict(entradas_conver)
+        predicciones = modelo.predict(entradas_para_predecir)
 
         return predicciones

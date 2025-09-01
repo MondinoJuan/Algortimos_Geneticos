@@ -2,6 +2,8 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 import csv
+import os
+import pandas as pd
 
 precio_dolar = 1359
 
@@ -62,14 +64,22 @@ def obtener_precios_por_tonelada():
                 if len(precios) >= 2:
                     precio = int(float(precios_cultivo[0].text.strip().replace('$', '').replace('.', '').replace(',','.')))
                 break
-        if cultivo == "Maní Runner":
-            cultivo = "maní"
         precios.append([fecha, cultivo, precio])
 
     return precios
 
 def recuperar_precios(lista:list=[], fecha=datetime.now().date()):
-    with open("Recuperacion_de_datos/Semillas/Archivos generados/precios_por_tonelada.csv", newline='', encoding="utf-8") as datos_precios:
+
+    csv_path = "Recuperacion_de_datos/Semillas/Archivos generados/precios_por_tonelada.csv"
+
+    if not os.path.exists(csv_path):
+        # Crear un DataFrame vacío con las columnas deseadas
+        df = pd.DataFrame(columns=['fecha', 'cultivo_nombre', 'precio_x_tonelada'])
+        
+        # Guardar el CSV sin índice
+        df.to_csv(csv_path, index=False)
+
+    with open(csv_path, newline='', encoding="utf-8") as datos_precios:
         data = csv.reader(datos_precios)
         encabezado = next(data, None)
         datos_hoy = [fila for fila in data 
@@ -80,8 +90,15 @@ def recuperar_precios(lista:list=[], fecha=datetime.now().date()):
 
     if not datos_hoy:
         datos_hoy = obtener_precios_por_tonelada()
-        with open("Recuperacion_de_datos/Semillas/Archivos generados/precios_por_tonelada.csv", 'w', newline='', encoding="utf-8") as datos_precios:
+        with open(csv_path, 'w', newline='', encoding="utf-8") as datos_precios:
             writer = csv.writer(datos_precios)
+            writer.writerow(['fecha', 'cultivo_nombre', 'precio_x_tonelada'])
+            for fila in datos_hoy:
+                cultivo = fila[1]
+                if cultivo.lower() == "maní runner":
+                    fila[1] = "maní"
+                elif cultivo.lower() == "maiz":
+                    fila[1] = "maíz"
             writer.writerows(datos_hoy)
 
     if lista:
@@ -93,11 +110,12 @@ def recuperar_precios(lista:list=[], fecha=datetime.now().date()):
                     break
         return lista_precios
 
+
     return datos_hoy
 
 precios = recuperar_precios()
-for cultivo in precios:
-    print(f"Hoy {cultivo[0]} el valor de la tonelada de {cultivo[1]} es {cultivo[2]}")
+#for cultivo in precios:
+    #print(f"Hoy {cultivo[0]} el valor de la tonelada de {cultivo[1]} es {cultivo[2]}")
 # recuperar_precios() ->
 #[['2025-08-12', 'trigo', '266540'], 
 # ['2025-08-12', 'cebada', '243460'], 
@@ -108,7 +126,7 @@ for cultivo in precios:
 # ['2025-08-12', 'Mani', '785715.0']]
 
 
-precios_algunos = recuperar_precios(["soja","cebada","trigo"])
+#precios_algunos = recuperar_precios(["soja","cebada","trigo"])
 # recuperar_precios(["soja","cebada","trigo"]) ->
 #[['soja', '385000'], 
 # ['cebada', '243460'], 

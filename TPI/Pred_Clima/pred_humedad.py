@@ -65,8 +65,8 @@ def train_LSTM_humedad(data):
     plot_predictions(train_pred, train_output, "Train Data", train_period)
     plot_predictions(test_pred, test_output, "Test Data", test_period)
 
-def predecir_proximos_meses(latitud, longitud, WINDOW_SIZE=14, steps=14):
-    data = creo_archivo_clima(latitud, longitud)
+def predecir_proximos_meses(data, WINDOW_SIZE=14, steps=14):
+    #data = creo_archivo_clima(latitud, longitud)
     ultimos = data['humedad_relativa_%'].values[-WINDOW_SIZE:]
     predicciones = []
     model = load_model("model/model_hum.keras")

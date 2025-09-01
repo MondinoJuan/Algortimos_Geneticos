@@ -126,7 +126,20 @@ def main(entradas_para_predecir = None, modelo = None):
         df = separar_fecha(df)
         df['viento_lag1'] = df['velocidad_viento_m_s'].shift(1)
         df = df.dropna()
+        ultima_tupla = df.tail(1)
 
-        predicciones = modelo.predict(df[['anio', 'mes', 'viento_lag1']])
+        predicciones = []
+
+        for i in range(14):
+            prediccion = modelo.predict(ultima_tupla[['anio', 'mes', 'viento_lag1']])
+            nueva_fila = {
+                'anio': ultima_tupla['anio'].values[0] + (ultima_tupla['mes'].values[0] // 12),
+                'mes': (ultima_tupla['mes'].values[0] % 12) + 1,
+                'velocidad_viento_m_s': prediccion[0],
+                'viento_lag1': ultima_tupla['velocidad_viento_m_s'].values[0]
+            }
+            nueva_fila_df = pd.DataFrame([nueva_fila])
+            predicciones.append(prediccion[0])
+            ultima_tupla = nueva_fila_df
 
         return predicciones

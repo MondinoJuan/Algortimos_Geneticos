@@ -1,7 +1,7 @@
 from Pred_Clima.pred_temp import train_LSTM_temp
 from Pred_Clima.pred_humedad import train_LSTM_humedad
-from Pred_Clima.pred_precip import train_LSTM_precip
 from Pred_Clima.pred_precip_GBR import entrenar_y_devolver_modelo as entrenar_y_devolver_modelo1, main as prediccion_GBR1
+from Pred_Clima.pred_viento_GBR import entrenar_y_devolver_modelo
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -45,12 +45,12 @@ df = limpiar_df(df_clima)
 df = separar_fecha(df)
 df['viento_lag1'] = df['velocidad_viento_m_s'].shift(1)
 
-#train_LSTM_temp(df_clima)
-#train_LSTM_humedad(df_clima)
-#train_LSTM_precip(df_clima)
+train_LSTM_temp(df_clima)
+train_LSTM_humedad(df_clima)
+entrenar_y_devolver_modelo()
 
 
-'''
+
 # DATA PREPARATION
 modelo = entrenar_y_devolver_modelo1()
 
@@ -72,5 +72,5 @@ plt.xlabel('Índice de Muestra')
 plt.ylabel('Precipitacion (mm)')
 plt.legend()
 plt.show()
-'''
+
 

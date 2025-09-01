@@ -89,12 +89,12 @@ def train_LSTM_temp(data):
     plot_predictions(train_pred, train_output, "Train Data", train_period)
     plot_predictions(test_pred, test_output, "Test Data", test_period)
 
-def predecir_proximos_meses(latitud, longitud, WINDOW_SIZE=14, steps=14):
+def predecir_proximos_meses(data, WINDOW_SIZE=14, steps=14):
     """
     Genera predicciones para los próximos `steps` meses
     usando la última ventana de `WINDOW_SIZE` observaciones.
     """
-    data = creo_archivo_clima(latitud, longitud)
+    #data = creo_archivo_clima(latitud, longitud)
     ultimos = data['temperatura_media_C'].values[-WINDOW_SIZE:]
     predicciones = []
     model = load_model("model/model_temp.keras")
