@@ -190,6 +190,7 @@ df_final = pd.merge(
 
 #print(f"DataFrame final: {df_final.shape}")
 
+df_final["cultivo_nombre"] = df_final["cultivo_nombre"].str.strip().str.lower()
 
 # Como ya no hay merges deberia sacar departamento_nombre y coords
 column_order = [

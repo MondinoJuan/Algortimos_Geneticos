@@ -5,25 +5,31 @@ import matplotlib.pyplot as plt
 import pandas as pd
 # Utiliza openpyxl tambien
 
-# GENERAL
+from Red_neuronal.My_GBM import main as utilizar_GBM
 
+# GENERAL
 '''
 La idea es crear poblaciones con los mismos datos de suelo dependiendo del departamento y un clima predecido de aca a 14 meses,
 diferenciandose en la semilla utilizada y el área a cultivar por semilla.
 Deberia usarse el problema de la mochila planteado en el TP2?
 '''
 
+SEMILLAS = ['girasol', 'soja', 'maiz', 'trigo', 'sorgo', 'cebada', 'maní']
+
 def aleatorio():
     return random.randint(0, 1)
 
-def completoCromosoma(cantidad):                # Modificar     
-    cromosoma = 0
-    pass
+def completoCromosoma(maximo, cantidad_genes=7):
+    cromosoma = [random.random() for _ in range(cantidad_genes)]
+    suma = sum(cromosoma)
+    cromosoma = [(gen / suma) * maximo for gen in cromosoma]
     return cromosoma
 
-def generarPoblacion(cantidadCromosomas, cantidadGenes):            # Modificar
-    poblacion = []
-    pass
+def generarPoblacion(cantidadCromosomas, cantidadGenes, maximo):          
+    poblacion = [] * cantidadCromosomas
+    for _ in range(cantidadCromosomas):
+        cromosoma = completoCromosoma(maximo, cantidadGenes)
+        poblacion.append(cromosoma)
     return poblacion
 
 def binarioADecimal(cromosoma):
@@ -35,17 +41,73 @@ def binarioADecimal(cromosoma):
         exponente += 1 
     return decimal
 
-def funcionObjetivo(x):                                 # Modificar
-    pass
-    return
+def funcionObjetivo(x, precio):
+    # Pasa por la red neuronal
+    obj = x * precio  
+    return obj
 
-def calculadorFuncionObjetivo(poblacion):               # Modificar
+def calculadorFuncionObjetivo(poblacion): 
     objetivos = []
+
+    # Recupero precios de la tonelada de semilla
+    df_precios = pd.read_csv("Recuperacion_de_datos/Semillas/Archivos generados/precios_por_tonelada.csv")
+    df_precios = df_precios.tail(7)
+    df_precios = df_precios.iloc[:, [1, 2]]
+
     for individuo in poblacion:
-        decimal = binarioADecimal(individuo)
-        obj = funcionObjetivo(decimal)
+        toneladas = red_neuronal(individuo)
+        for idx, semilla in enumerate(SEMILLAS):
+            precio = df_precios[df_precios.iloc[:, 0] == semilla].iloc[0, 1]
+            obj = funcionObjetivo(toneladas[idx], precio)
         objetivos.append(obj)
     return objetivos
+
+def red_neuronal(individuo, depto, lon, lat):
+    # Uno con datos del suelo
+    df_suelo = pd.read_csv("Recuperacion_de_datos/Suelos/suelo_promedio.csv")
+    df_suelo = df_suelo[df_suelo['departamento_nombre'] == depto]
+
+    # Uno con datos predecidos del clima
+    from keras.models import load_model
+    model = load_model("model/model.keras")
+    predicciones_clima = model.predict(lon, lat)
+
+    # Creo el dataframe final para pasar a la red neuronal
+    df_final = pd.DataFrame()
+    for area in individuo:
+        df_final = df_final.append({
+            'superficie_sembrada_ha': area,
+            **df_suelo.iloc[0].to_dict(),
+            **predicciones_clima.to_dict(), 
+            'cultivo_nombre': SEMILLAS[individuo.index(area)],
+            'anio': 2025
+        }, ignore_index=True)
+
+    cols = [['cultivo_nombre', 'anio', 'organic_carbon', 'ph', 'clay', 'silt', 'sand', 
+                        'temperatura_media_C_1', 'temperatura_media_C_2', 'temperatura_media_C_3', 'temperatura_media_C_4', 
+                        'temperatura_media_C_5', 'temperatura_media_C_6', 'temperatura_media_C_7', 'temperatura_media_C_8', 
+                        'temperatura_media_C_9', 'temperatura_media_C_10', 'temperatura_media_C_11', 'temperatura_media_C_12', 
+                        'temperatura_media_C_13', 'temperatura_media_C_14', 'humedad_relativa_%_1', 'humedad_relativa_%_2', 
+                        'humedad_relativa_%_3', 'humedad_relativa_%_4', 'humedad_relativa_%_5', 'humedad_relativa_%_6', 
+                        'humedad_relativa_%_7', 'humedad_relativa_%_8', 'humedad_relativa_%_9', 'humedad_relativa_%_10', 
+                        'humedad_relativa_%_11', 'humedad_relativa_%_12', 'humedad_relativa_%_13', 'humedad_relativa_%_14', 
+                        'velocidad_viento_m_s_1', 'velocidad_viento_m_s_2', 'velocidad_viento_m_s_3', 'velocidad_viento_m_s_4', 
+                        'velocidad_viento_m_s_5', 'velocidad_viento_m_s_6', 'velocidad_viento_m_s_7', 'velocidad_viento_m_s_8', 
+                        'velocidad_viento_m_s_9', 'velocidad_viento_m_s_10', 'velocidad_viento_m_s_11', 'velocidad_viento_m_s_12', 
+                        'velocidad_viento_m_s_13', 'velocidad_viento_m_s_14', 'velocidad_viento_km_h_1', 'velocidad_viento_km_h_2', 
+                        'velocidad_viento_km_h_3', 'velocidad_viento_km_h_4', 'velocidad_viento_km_h_5', 'velocidad_viento_km_h_6', 
+                        'velocidad_viento_km_h_7', 'velocidad_viento_km_h_8', 'velocidad_viento_km_h_9', 'velocidad_viento_km_h_10', 
+                        'velocidad_viento_km_h_11', 'velocidad_viento_km_h_12', 'velocidad_viento_km_h_13', 'velocidad_viento_km_h_14', 
+                        'precipitacion_mm_mes_1', 'precipitacion_mm_mes_2', 'precipitacion_mm_mes_3', 'precipitacion_mm_mes_4', 
+                        'precipitacion_mm_mes_5', 'precipitacion_mm_mes_6', 'precipitacion_mm_mes_7', 'precipitacion_mm_mes_8', 
+                        'precipitacion_mm_mes_9', 'precipitacion_mm_mes_10', 'precipitacion_mm_mes_11', 'precipitacion_mm_mes_12', 
+                        'precipitacion_mm_mes_13', 'precipitacion_mm_mes_14', 'superficie_sembrada_ha']]
+    df_final = df_final[cols]
+    
+    predicciones_toneladas = utilizar_GBM(df_final)
+    return predicciones_toneladas
+    
+
 
 def calculadorFitness(objetivos):                   
     fitness = []
@@ -63,24 +125,46 @@ def calculadorEstadisticos(poblacion, objetivos):
     return [max_objetivos,min_objetivos, avg_objetivos, mejor_cromosoma] 
 
 # Crossover
-def crossover1Punto(padre, madre):
+def crossover1Punto(padre, madre, maximo):         
     puntoCorte = random.randint(1, len(padre)-1)
     h1 = padre[:puntoCorte] + madre[puntoCorte:]
     h2 = madre[:puntoCorte] + padre[puntoCorte:]
+    h1 = normalizar(h1, maximo)
+    h2 = normalizar(h2, maximo)
     return h1, h2
 
-# Mutacion
-def mutacionInvertida(poblacion, probMutacion):         # Modificar mutacion
+def normalizar(individuo, maximo):
+    s = sum(individuo)
+    return [(x/s) * maximo for x in individuo]
+
+# Mutaciones
+def mutacionInvertida(poblacion, probMutacion):         
+    for i in range(len(poblacion)):
+        if random.random() < probMutacion:
+            individuo = poblacion[i]
+            pos1 = random.randint(0, len(individuo) - 1)
+            pos2 = random.randint(0, len(individuo) - 1)
+            while pos1 == pos2:
+                pos2 = random.randint(0, len(individuo) - 1)
+            # Ordenar para que pos1 < pos2
+            if pos1 > pos2:
+                pos1, pos2 = pos2, pos1
+            segmento_invertido = individuo[pos1:pos2+1][::-1]
+            poblacion[i] = individuo[:pos1] + segmento_invertido + individuo[pos2+1:]
+    return poblacion
+
+def mutacionSwap(poblacion, probMutacion):         
+    # Se utilizará Swap mutation
     for i in range(len(poblacion)):
         if random.random() < probMutacion:
             individuo = poblacion[i]
             pos1 = random.randint(0, len(individuo) - 1)
             pos2 = random.randint(0, len(individuo) - 1)
             # Ordenar para que pos1 < pos2
-            if pos1 > pos2:
-                pos1, pos2 = pos2, pos1
-            segmento_invertido = individuo[pos1:pos2+1][::-1]
-            poblacion[i] = individuo[:pos1] + segmento_invertido + individuo[pos2+1:]
+            while pos1 == pos2:
+                pos2 = random.randint(0, len(individuo) - 1)
+            individuo[pos1], individuo[pos2] = individuo[pos2], individuo[pos1]
+            poblacion[i] = individuo
     return poblacion
 
 # SELECCION
@@ -117,7 +201,8 @@ def seleccionTorneo(poblacion, fitnessValores, cantidadIndividuos, cantidadCompe
 
 # CICLOS
 # Elitismo
-def ciclos_con_elitismo(ciclos, prob_crossover, prob_mutacion, cant_individuos, cant_genes, metodo_seleccion, cantidadElitismo, cantidadCompetidores=None):
+def ciclos_con_elitismo(ciclos, prob_crossover, prob_mutacion, cant_individuos, cant_genes, metodo_seleccion, cantidadElitismo, 
+                        cantidadCompetidores=None):
     maximos=[]
     minimos=[]
     promedios=[]
@@ -171,13 +256,14 @@ def ciclos_con_elitismo(ciclos, prob_crossover, prob_mutacion, cant_individuos, 
     return maximos, minimos, promedios, mejores
 
 # Sin elitismo
-def ciclos_sin_elitismo(ciclos, prob_crossover, prob_mutacion, cantidadIndividuos, cant_genes, metodo_seleccion, cantidadCompetidores=None):
+def ciclos_sin_elitismo(ciclos, prob_crossover, prob_mutacion, cantidadIndividuos, cant_genes, metodo_seleccion, 
+                        cantidadCompetidores=None):
     maximos=[]
     minimos=[]
     promedios=[]
     mejores=[]
     
-    pob = generarPoblacion(cantidadIndividuos,cant_genes)
+    pob = generarPoblacion(cantidadIndividuos, cant_genes)
     fo = calculadorFuncionObjetivo(pob)
     fit = calculadorFitness(fo)
     rta = calculadorEstadisticos(pob, fo)
@@ -277,6 +363,64 @@ def verificar_maximo(datos):
         print("Todos los datos son mayores o iguales a sus antecesores.")
 
 
+
+def main(depto, lat, lon, area_m2):
+    probCrossover = 0.75
+    probMutacion = 0.001
+    cantidadIndividuos = 10
+    cantidadElitismo = 2
+    cantidadCompetidores = int(cantidadIndividuos * 0.4)
+
+    cantidadGenes = 7
+    maximosPorCiclo = []
+    minimosPorCiclo = []
+    promediosPorCiclo = []
+
+    while True:
+        ciclos = input("\nIngrese la cantidad de ciclos (debe ser un entero): ")
+        try:
+            ciclos = int(ciclos)
+            break
+        except ValueError:
+            print("Por favor, ingrese un número entero válido.")
+    while True:
+        seleccion = input("\nIngrese el método de seleccion <r-ruleta t-torneo>: ")
+        if seleccion.lower() in ['r', 't']:
+            break
+        else:
+            print("Por favor, ingrese 'r' para ruleta o 't' para torneo.")
+    while True:
+        elitismo = input("\n¿Quiere usar elitismo? <elitismo: 1-si 0-no> ")
+        if elitismo in ['0', '1']:
+            elitismo = int(elitismo)
+            break
+        else:
+            print("Por favor, ingrese '1' para sí o '0' para no.")
+    
+    if elitismo == 1:
+        maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores = ciclos_con_elitismo(ciclos, probCrossover, probMutacion, 
+                                                                                           cantidadIndividuos, cantidadGenes, 
+                                                                                           seleccion, 
+                                                                                           cantidadElitismo, cantidadCompetidores)
+        if seleccion == 'r':
+            titulo = 'Seleccion RULETA ELITISTA - de '+ str(ciclos) + ' ciclos'
+        else:
+            titulo = 'Seleccion TORNEO ELITISTA - de '+ str(ciclos) + ' ciclos'
+        generar_grafico(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, titulo, ciclos)
+        crear_tabla(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, seleccion, elitismo)
+    else:
+        maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores = ciclos_sin_elitismo(ciclos, probCrossover, probMutacion, 
+                                                                                           cantidadIndividuos, cantidadGenes, 
+                                                                                           seleccion, cantidadCompetidores)
+        if seleccion == 'r':
+            titulo = 'Seleccion RULETA - de '+ str(ciclos) + ' ciclos'
+        else:
+            titulo = 'Seleccion TORNEO - de '+ str(ciclos) + ' ciclos'
+        generar_grafico(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, titulo, ciclos)
+        crear_tabla(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, seleccion, elitismo)
+
+
+
 # PROGRAMA PRINCIPAL
 probCrossover = 0.75
 probMutacion = 0.05
@@ -284,36 +428,9 @@ cantidadIndividuos = 10
 cantidadElitismo = 2
 cantidadCompetidores = int(cantidadIndividuos * 0.4)
 
-cantidadGenes = 30
-coef = (2 ** cantidadGenes) - 1
+cantidadGenes = 7
 maximosPorCiclo = []
 minimosPorCiclo = []
 promediosPorCiclo = []
-
-if len(sys.argv) != 7 or sys.argv[1] != "-c" or sys.argv[3] != "-s" or sys.argv[5] != "-e":
-    print("Uso: python TP1_AG_G2.py -c <ciclos> -s <seleccion: r-ruleta t-torneo> -e <elitismo: 1-si 0-no>")
-    sys.exit(1)
-if int(sys.argv[2]) < 0 or (int(sys.argv[6]) != 0 and int(sys.argv[6]) != 1) or (sys.argv[4] != "r" and sys.argv[4] != "t"):
-    print("Error: python TP1_AG_G2.py -c <ciclos> -s <seleccion: r-ruleta t-torneo> -e <elitismo: 1-si 0-no>")
-    sys.exit(1)
-
-ciclosPrograma = int(sys.argv[2])
-
-if int(sys.argv[6]) == 1:
-    maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores = ciclos_con_elitismo(ciclosPrograma,probCrossover, probMutacion, cantidadIndividuos, cantidadGenes, metodo_seleccion=sys.argv[4], cantidadElitismo=cantidadElitismo, cantidadCompetidores=cantidadCompetidores)
-    if sys.argv[4] == 'r':
-        titulo = 'Seleccion RULETA ELITISTA - de '+ str(ciclosPrograma) + ' ciclos'
-    else:
-        titulo = 'Seleccion TORNEO ELITISTA - de '+ str(ciclosPrograma) + ' ciclos'
-    generar_grafico(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, titulo, ciclosPrograma)
-    crear_tabla(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, sys.argv[4], int(sys.argv[6]))
-else:
-    maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores = ciclos_sin_elitismo(ciclosPrograma,probCrossover, probMutacion, cantidadIndividuos, cantidadGenes, sys.argv[4], cantidadCompetidores=cantidadCompetidores)
-    if sys.argv[4] == 'r':
-        titulo = 'Seleccion RULETA - de '+ str(ciclosPrograma) + ' ciclos'
-    else:
-        titulo = 'Seleccion TORNEO - de '+ str(ciclosPrograma) + ' ciclos'
-    generar_grafico(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, titulo, ciclosPrograma)
-    crear_tabla(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, sys.argv[4], int(sys.argv[6]))
 
 verificar_maximo(maximosPorCiclo)

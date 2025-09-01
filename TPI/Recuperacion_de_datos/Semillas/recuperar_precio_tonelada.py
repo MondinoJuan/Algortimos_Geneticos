@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import csv
 
-precio_dolar = 1316
+precio_dolar = 1359
 
 # --------------------------------------------------------------------
 
@@ -62,6 +62,8 @@ def obtener_precios_por_tonelada():
                 if len(precios) >= 2:
                     precio = int(float(precios_cultivo[0].text.strip().replace('$', '').replace('.', '').replace(',','.')))
                 break
+        if cultivo == "Maní Runner":
+            cultivo = "maní"
         precios.append([fecha, cultivo, precio])
 
     return precios
