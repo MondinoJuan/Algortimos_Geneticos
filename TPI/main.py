@@ -71,7 +71,6 @@ def ejecutar_ag(departamento, longitud, latitud, metros_cuadrados):
     from Algoritmo_Genetico.ag import main as ejecuto_ag
     print("Ejecutando algoritmo genético...")
     ejecuto_ag(departamento, longitud, latitud, metros_cuadrados)
-    sys.exit(0)
     print("Finalizó AG\n")
 
 
@@ -81,7 +80,7 @@ def ejecutar_ag(departamento, longitud, latitud, metros_cuadrados):
 if __name__ == "__main__":
 
     print("Iniciando selección de campo...")
-    app = correr_app()  # esto bloquea hasta cerrar la ventana
+    app = correr_app() 
     print("App cerrada. Continuando ejecución...\n")
 
     # Obtenemos coordenadas y datos del campo
