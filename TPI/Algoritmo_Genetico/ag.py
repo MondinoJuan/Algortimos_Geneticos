@@ -496,4 +496,4 @@ if __name__ == "__main__":
 
     main(departamento, latitud, longitud, area_m2)
 
-#verificar_maximo(maximosPorCiclo)
+    #verificar_maximo(maximosPorCiclo)
