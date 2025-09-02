@@ -42,11 +42,11 @@ def calcular_centroide(coord_list):
     return (centroid.x, centroid.y)  # devuelve (lon, lat)
 
 
-def agregar_clima_por_departamento(df_semillas, df_suelo_promedio, años_atras_ejemplo, n_meses=14):
-    df_semillas = df_semillas.copy()
+def agregar_clima_por_departamento(df_suelo_semillas, años_atras_ejemplo, n_meses=14):
+    df_suelo_semillas = df_suelo_semillas.copy()
 
     # Iterar sobre cada departamento en df_suelo_promedio
-    for _, row in df_suelo_promedio.iterrows():
+    for _, row in df_suelo_semillas.iterrows():
         depto = row['departamento_nombre']
         lon_str, lat_str = row['coords'].strip("()").split(",")
         lon, lat = float(lon_str), float(lat_str)
@@ -63,7 +63,7 @@ def agregar_clima_por_departamento(df_semillas, df_suelo_promedio, años_atras_e
         df_clima_filtrado = df_clima.dropna(thresh=len(df_clima) * 0.15, axis=1).copy()
 
         # Filtrar semillas de este departamento
-        mask = df_semillas['departamento_nombre'] == depto
+        mask = df_suelo_semillas['departamento_nombre'] == depto
 
         for variable in ['temperatura_media_C','humedad_relativa_%',
                  'velocidad_viento_m_s',
@@ -93,17 +93,12 @@ def agregar_clima_por_departamento(df_semillas, df_suelo_promedio, años_atras_e
                 return valores
 
             # Aplicar la función a cada año de siembra en este departamento
-            df_semillas.loc[mask, variable] = df_semillas.loc[mask, 'anio'].apply(obtener_clima_previo)
+            df_suelo_semillas.loc[mask, variable] = df_suelo_semillas.loc[mask, 'anio'].apply(obtener_clima_previo)
 
-    return df_semillas
+    return df_suelo_semillas
 
 
-# -----------------------------
-# PROGRAMA PRINCIPAL
-# -----------------------------
-def main():
-    años_atras_ejemplo = 44
-
+def crear_df_suelo_semillas(path_suelo_semillas):
     # Recupero todos los datos de las semillas desde min_year en adelante
     df_semillas = pd.read_csv('Recuperacion_de_datos/Semillas/Archivos generados/semillas_todas_concatenadas.csv')
 
@@ -143,18 +138,36 @@ def main():
 
         df_suelo_promedio.to_csv('Recuperacion_de_datos/Suelos/suelo_promedio.csv', index=False)
 
+    df_suelo_semillas = pd.merge(df_semillas_filtrado, df_suelo_promedio, on = 'departamento_nombre', how = 'inner')
+    
+    df_suelo_semillas.to_csv(path_suelo_semillas)
+
+    return df_suelo_semillas
+
+# -----------------------------
+# PROGRAMA PRINCIPAL
+# -----------------------------
+def main():
+    años_atras_ejemplo = 44
+
+    path_suelo_semillas = 'Archivos/df_suelo_Semillas.csv'
+
+    if not os.path.exists(path_suelo_semillas):
+        df_suelo_semillas = crear_df_suelo_semillas()
+    else:
+        df_suelo_semillas = pd.read_csv(path_suelo_semillas)
+
     # Recupero clima para cada centroide de suelo_promedio
     n_meses = 14
-    df_semillas_con_clima = agregar_clima_por_departamento(
-        df_semillas_filtrado, df_suelo_promedio, años_atras_ejemplo, n_meses
-    )
 
-    df_final = pd.merge(
+    df_final = agregar_clima_por_departamento(df_suelo_semillas, años_atras_ejemplo, n_meses)
+
+    '''df_final = pd.merge(
         df_semillas_con_clima,
         df_suelo_promedio,
         on='departamento_nombre',
         how='inner'
-    )
+    )'''
 
     df_final["cultivo_nombre"] = df_final["cultivo_nombre"].str.strip().str.lower()
 
