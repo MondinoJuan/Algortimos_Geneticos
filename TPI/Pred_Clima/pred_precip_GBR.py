@@ -45,9 +45,9 @@ def separar_fecha(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def entrenar_y_devolver_modelo(head_cant=None):
+def entrenar_y_devolver_modelo(clima_file, head_cant=None):
     # DATA PREPARATION
-    df = pd.read_csv("Recuperacion_de_datos/Clima/clima_nasa_mensual_44_anios.csv")
+    df = pd.read_csv(clima_file)
 
     if head_cant is not None:
         df = df.head(head_cant)  # Usar solo las primeras head_cant filas para pruebas rápidas
@@ -99,7 +99,7 @@ def entrenar_y_devolver_modelo(head_cant=None):
     #plt.plot(range(len(y_train), len(y_train)+len(y_test)), predicciones, label='Predicciones', color='red', alpha=0.6)
     plt.plot(predicciones, label='Predicciones', color='red', alpha=0.6)
 
-    plt.title('Producción Real vs Predicha')
+    plt.title('Precipitaciones Real vs Predicha')
     plt.xlabel('Índice de Muestra')
     plt.ylabel('Precipitaciones (mm)')
     plt.legend()
@@ -112,12 +112,12 @@ def entrenar_y_devolver_modelo(head_cant=None):
 # -------------------------------
 # MAIN
 # -------------------------------
-def main(entradas_para_predecir = None, modelo = None):
+def main(clima_file, entradas_para_predecir = None, modelo = None):
     if entradas_para_predecir is None:
         head_cant = int(input("¿Cuántas filas usar para entrenar? (0 para todas): "))
         if head_cant == 0:
             head_cant = None
-        modelo = entrenar_y_devolver_modelo(head_cant)
+        modelo = entrenar_y_devolver_modelo(clima_file, head_cant)
     else:
         # Cargar modelo guardado
         modelo = joblib.load("model/modelo_gbm_precip.pkl")

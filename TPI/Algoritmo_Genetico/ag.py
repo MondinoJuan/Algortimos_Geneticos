@@ -66,7 +66,7 @@ def red_neuronal(individuo, depto, lon, lat):
     df_suelo = df_suelo[df_suelo['departamento_nombre'] == depto]
 
     # Uno con datos predecidos del clima
-    df_predicciones_clima = predecir_datos_clima()
+    df_predicciones_clima = predecir_datos_clima(depto)
 
     # Creo el dataframe final para pasar a la red neuronal
     df_final = pd.DataFrame()
@@ -107,7 +107,7 @@ def red_neuronal(individuo, depto, lon, lat):
                     'precipitacion_mm_mes_11', 'precipitacion_mm_mes_12', 'precipitacion_mm_mes_13', 'precipitacion_mm_mes_14', 
                     'superficie_sembrada_ha']
     df_final = df_final[cols]
-    
+
     predicciones_toneladas = utilizar_GBM(df_final)
     return predicciones_toneladas
 
@@ -323,6 +323,32 @@ def ciclos_sin_elitismo(depto, lat, lon, area_m2, ciclos, prob_crossover, prob_m
         minimos.append(rta[1])
         promedios.append(rta[2])
         mejores.append(rta[3])
+
+        suma = [0] * 7
+        total = 0.0
+        for x in pob:
+            suma[0] += x[0]
+            suma[1] += x[1]
+            suma[2] += x[2]
+            suma[3] += x[3]
+            suma[4] += x[4]
+            suma[5] += x[5]
+            suma[6] += x[6]
+
+            total = suma[0] + suma[1] + suma[2] + suma[3] + suma[4] + suma[5] + suma[6]
+
+
+        print(f"------------------ ITERACION: {j} ----------------------------")
+        print(f"\n GIRASOL: {mejores[-1][0]} || total: {suma[0]}")
+        print(f"\n SOJA: {mejores[-1][1]} || total: {suma[1]}")
+        print(f"\n MAIZ: {mejores[-1][2]} || total: {suma[2]}")
+        print(f"\n TRIGO: {mejores[-1][3]} || total: {suma[3]}")
+        print(f"\n SORGO: {mejores[-1][4]} || total: {suma[4]}")
+        print(f"\n CEBADA: {mejores[-1][5]} || total: {suma[5]}")
+        print(f"\n MANI: {mejores[-1][6]} || total: {suma[6]}")
+        print(f"\n TOTAL DE M2: {total}")
+        print("----------------------------------------------")
+
     return maximos, minimos, promedios, mejores
 
 # TABLAS EXCEL
@@ -447,25 +473,27 @@ def main(depto, lat, lon, area_m2):
         #generar_grafico(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, titulo, ciclos)
         #crear_tabla(maximosPorCiclo, minimosPorCiclo, promediosPorCiclo, mejores, seleccion, elitismo)
 
+    return
 
+if __name__ == "__main__":
 
-# PROGRAMA PRINCIPAL
-probCrossover = 0.75
-probMutacion = 0.05
-cantidadIndividuos = 10
-cantidadElitismo = 2
-cantidadCompetidores = int(cantidadIndividuos * 0.4)
+    # PROGRAMA PRINCIPAL
+    probCrossover = 0.75
+    probMutacion = 0.05
+    cantidadIndividuos = 10
+    cantidadElitismo = 2
+    cantidadCompetidores = int(cantidadIndividuos * 0.4)
 
-cantidadGenes = 7
-maximosPorCiclo = []
-minimosPorCiclo = []
-promediosPorCiclo = []
+    cantidadGenes = 7
+    maximosPorCiclo = []
+    minimosPorCiclo = []
+    promediosPorCiclo = []
 
-latitud = -31.4
-longitud = -64.2
-departamento = "San Nicolás"
-area_m2 = 1900
+    latitud = -31.4
+    longitud = -64.2
+    departamento = "San Nicolás"
+    area_m2 = 1900
 
-main(departamento, latitud, longitud, area_m2)
+    main(departamento, latitud, longitud, area_m2)
 
-#verificar_maximo(maximosPorCiclo)
+    #verificar_maximo(maximosPorCiclo)

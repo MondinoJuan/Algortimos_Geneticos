@@ -198,7 +198,7 @@ def procesar_datos_mensuales(df):
     return datos_mensuales
 
 
-def main(latitud, longitud, años_atras=44):
+def main(latitud, longitud, departamento, crear_archivo_bool = False, años_atras=44):
     #print("=== OBTENIENDO DATOS DIARIOS Y PROCESANDO MENSUALMENTE ===")
     # Obtener datos diarios
     df_clima_diario = obtener_datos_nasa_power(latitud, longitud, años_atras)
@@ -210,29 +210,14 @@ def main(latitud, longitud, años_atras=44):
     
     if not df_clima.empty:
         # Guardar en CSV
-        output_path = f"Recuperacion_de_datos/Clima/clima_nasa_mensual_{años_atras}_anios.csv"
-        df_clima.to_csv(output_path, index=False)
-        
-        #print(f"\n✅ Datos mensuales guardados en: {output_path}")
-        #print(f"Total de registros mensuales: {len(df_clima)}")
-        #print("\nPrimeros registros:")
-        #print(df_clima.head())
-        
-        #print("\nÚltimos registros:")
-        #print(df_clima.tail())
-        
-        #print("\nEstadísticas básicas:")
-        #print(df_clima.describe())
+        output_path = f"Recuperacion_de_datos/Clima/clima_nasa_mensual_44_anios_de_{departamento}.csv"
+        if crear_archivo_bool:
+            df_clima.to_csv(output_path, index=False)
         
         # Verificar datos faltantes
-        print("\nDatos faltantes por columna:")
-        print(df_clima.isnull().sum())
-        
-        # Mostrar información sobre el procesamiento
-        if 'precipitacion_mm_mes' in df_clima.columns:
-            #print(f"\nPrecipitación promedio mensual: {df_clima['precipitacion_mm_mes'].mean():.2f} mm")
-            #print(f"Temperatura promedio: {df_clima['temperatura_media_C'].mean():.2f}°C") 
-            pass    
+        #print("\nDatos faltantes por columna:")
+        #print(df_clima.isnull().sum())
+  
     else:
         print("\n❌ No se pudieron obtener datos de NASA POWER")
         print("Verifica las coordenadas y la conexión a internet")

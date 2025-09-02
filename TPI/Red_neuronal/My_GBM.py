@@ -46,13 +46,13 @@ def guardar_modelo(modelo, ruta="model/modelo_gbm_completo.pkl"):
 
 def entrenar_y_devolver_modelo(head_cant = 0):
     # DATA PREPARATION
-    df = pd.read_csv("df_prod_expandido.csv")
+    df = pd.read_csv("Archivos/df_prod_expandido.csv")
 
     if head_cant != 0:
         df = df.head(head_cant)  # Usar solo las primeras head_cant filas para pruebas rápidas
 
     df_convertido, cultivo_a_entero = conversor_cultivo_a_entero(df)
-    #df.to_csv("df_semillas_suelo_clima_convertido.csv", index=False)
+    #df.to_csv("Archivos/df_semillas_suelo_clima_convertido.csv", index=False)
 
 
     df_convertido = limpiar_df(df_convertido)
@@ -162,9 +162,9 @@ def entrenar_y_devolver_modelo(head_cant = 0):
     plt.legend()
     plt.show()
 
-    #df_convertido = pd.read_csv("df_semillas_suelo_clima_convertido.csv")
+    #df_convertido = pd.read_csv("Archivos/df_semillas_suelo_clima_convertido.csv")
     df_reconvertido = conversor_entero_a_cultivo(df_convertido, cultivo_a_entero)
-    #df_reconvertido.to_csv("df_semillas_suelo_clima_reconvertido.csv", index=False)
+    #df_reconvertido.to_csv("Archivos/df_semillas_suelo_clima_reconvertido.csv", index=False)
 
     return GBR2
 

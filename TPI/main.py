@@ -1,69 +1,108 @@
-# ------------------------------------------------------------------------------------------------------------------------------------------------------
-# En este trabajo se realizará una estimación de qué combinación de semillas es la más adecuada para un campo determinado, teniendo en cuenta 
-# las características del suelo y el clima. Para ello, se utilizará una red neuronal GBM que tomará como entrada las características climáticas 
-# de los últimos 18 meses previos a la siembra, las características del suelo y una mezcla de semillas (que no se normaliza). La salida será 
-# la producción estimada en kg.
-# ------------------------------------------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# MAIN: estimación de la mejor combinación de semillas para un campo
+# --------------------------------------------------------------------------
 
-import pandas as pd
 import os
-
-from Mapa.GIS.gis_optimizado import MapApp, correr_app
+import pandas as pd
+from Mapa.GIS.gis_optimizado import correr_app
 from creacion_de_archivo_de_entreno_completo import calcular_centroide
-from Red_neuronal.My_GBM import main as entrenar_GBM
-from Recuperacion_de_datos.Clima.Recupero_clima_NASA_Mensual import main as creo_clima_nasa
-from Algoritmo_Genetico.ag import main as ejecuto_ag
-from Pred_Clima.pred_temp import train_LSTM_temp
-from Pred_Clima.pred_humedad import train_LSTM_humedad
-from Pred_Clima.pred_precip_GBR import train_GBR_precip
-from Pred_Clima.pred_viento_GBR import main as train_GBR_viento_ms
-from funciones_auxiliares_csv import create_df_with_differents_outputs, expand_array_columns
-from creacion_de_archivo_de_entreno_completo import main as creacion_archivo_entreno
+import sys
 
+# --------------------------------------
+# FUNCIONES AUXILIARES
+# --------------------------------------
 
+def entrenar_lstm_y_gbr(latitud, longitud, departamento):
+    """Entrena LSTM y modelos GBR si no existen"""
+    import pandas as pd
+    from Pred_Clima.pred_temp import train_LSTM_temp
+    from Pred_Clima.pred_humedad import train_LSTM_humedad
+    from Pred_Clima.pred_precip_GBR import main as train_GBR_precip
+    from Pred_Clima.pred_viento_GBR import main as train_GBR_viento_ms
 
-# INVOC0 A LA SELECCION DE CAMPO
-'''Devuelve las coordenadas del punto central del campo seleccionado, el nombre del departamento al que pertenece y 
-los metros cuadrados que tiene'''
-#app = MapApp()
-#app.run()
-app = correr_app()
-
-input("Despues de correr app")
-
-longitud, latitud = calcular_centroide(app.coordenadas)
-departamento = app.departamento
-metros_cuadrados = app.area_m2
-
-# Entreno LSTM
-if not os.path.exists("model/model.keras"):
-    if not os.path.exists("Recuperacion_de_datos/Clima/clima_nasa_mensual_44_anios.csv"):
+    clima_file = f"Recuperacion_de_datos/Clima/clima_nasa_mensual_44_anios_de_{departamento}.csv"
+    
+    if not os.path.exists(clima_file):
         from Recuperacion_de_datos.Clima.Recupero_clima_NASA_Mensual import main as creo_archivo_clima
-        creo_archivo_clima(latitud, longitud)
+        print("Creando archivo de clima...")
+        creo_archivo_clima(latitud, longitud, departamento, True)
 
-    df_clima = pd.read_csv("Recuperacion_de_datos/Clima/clima_nasa_mensual_44_anios.csv")
+    print("Leyendo datos de clima...")
+    df_clima = pd.read_csv(clima_file)
+
+    print("Entrenando LSTM de temperatura...")
     train_LSTM_temp(df_clima)
-    train_GBR_viento_ms()
+    print("Entrenando LSTM de humedad...")
     train_LSTM_humedad(df_clima)
-    train_GBR_precip()
-
-input("Antes de crear archivos")
-# Crear un nuevo df_semillas_suelo_clima
-creacion_archivo_entreno()
-
-# Crear nuevo df_prod
-create_df_with_differents_outputs()
-
-# Crear df_prod_expandido.csv
-expand_array_columns()
-input("Despues de crear archivos")
+    print("Entrenando GBR de precipitación...")
+    train_GBR_precip(clima_file)
+    print("Entrenando GBR de viento...")
+    train_GBR_viento_ms(clima_file)
+    print("Finalizó entrenamiento LSTM/GBR\n")
 
 
-# ENTRENO GBM
-entrenar_GBM()
+def crear_archivos_entreno():
+    """Crea dataframes y archivos de entrenamiento"""
+    from creacion_de_archivo_de_entreno_completo import main as creacion_archivo_entreno
+    from funciones_auxiliares_csv import create_df_with_differents_outputs, expand_array_columns
 
-# EJECUTO EL AG CON EL GBM ENTRENADO COMO FUNCIÓN OBJETIVO
-ejecuto_ag(departamento, longitud, latitud, metros_cuadrados)
+    if not os.path.exists("Archivos/df_semillas_suelo_clima.csv"):
+        print("Creando df_semillas_suelo_clima...")
+        creacion_archivo_entreno()
+    if not os.path.exists("Archivos/df_con_prod.csv"):
+        print("Creando df_prod...")
+        create_df_with_differents_outputs()
+    if not os.path.exists("Archivos/df_prod_expandido.csv"):
+        print("Creando df_prod_expandido.csv...")
+        expand_array_columns()
+    print("Finalizó creación de archivos\n")
 
 
-print("FIN DEL PROGRAMA")
+def entrenar_gbm():
+    """Entrena el GBM"""
+    from Red_neuronal.My_GBM import main as entrenar_GBM
+    print("Entrenando GBM...")
+    entrenar_GBM()
+    print("Finalizó entrenamiento GBM\n")
+
+
+def ejecutar_ag(departamento, longitud, latitud, metros_cuadrados):
+    """Ejecuta algoritmo genético"""
+    from Algoritmo_Genetico.ag import main as ejecuto_ag
+    print("Ejecutando algoritmo genético...")
+    ejecuto_ag(departamento, longitud, latitud, metros_cuadrados)
+    sys.exit(0)
+    print("Finalizó AG\n")
+
+
+# --------------------------------------
+# MAIN
+# --------------------------------------
+if __name__ == "__main__":
+
+    print("Iniciando selección de campo...")
+    app = correr_app()  # esto bloquea hasta cerrar la ventana
+    print("App cerrada. Continuando ejecución...\n")
+
+    # Obtenemos coordenadas y datos del campo
+    longitud, latitud = calcular_centroide(app.coordenadas)
+    departamento = app.departamento
+    metros_cuadrados = app.area_m2
+
+    # Entrenamiento LSTM + GBR
+    entrenar_lstm_y_gbr(latitud, longitud, departamento)
+
+    # Crear archivos de entrenamiento
+    crear_archivos_entreno()
+
+
+    # Entrenar GBM
+    if not os.path.exists("model/modelo_gbm_completo.pkl"):
+        entrenar_gbm()
+
+
+    # Ejecutar algoritmo genético
+    ejecutar_ag(departamento, longitud, latitud, metros_cuadrados)
+
+    print("FIN DEL PROGRAMA")
+    sys.exit(0)
