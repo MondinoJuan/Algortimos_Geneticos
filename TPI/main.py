@@ -52,7 +52,7 @@ def crear_archivos_entreno():
     if not os.path.exists("Archivos/df_con_prod.csv"):
         print("Creando df_prod...")
         create_df_with_differents_outputs()
-    if not os.path.exists("Archivos/df_con_prod_expandido.csv"):
+    if not os.path.exists("Archivos/df_prod_expandido.csv"):
         print("Creando df_prod_expandido.csv...")
         expand_array_columns()
     print("Finalizó creación de archivos\n")
@@ -71,6 +71,7 @@ def ejecutar_ag(departamento, longitud, latitud, metros_cuadrados):
     from Algoritmo_Genetico.ag import main as ejecuto_ag
     print("Ejecutando algoritmo genético...")
     ejecuto_ag(departamento, longitud, latitud, metros_cuadrados)
+    sys.exit(0)
     print("Finalizó AG\n")
 
 
@@ -94,8 +95,11 @@ if __name__ == "__main__":
     # Crear archivos de entrenamiento
     crear_archivos_entreno()
 
+
     # Entrenar GBM
-    entrenar_gbm()
+    if not os.path.exists("model/modelo_gbm_completo.pkl"):
+        entrenar_gbm()
+
 
     # Ejecutar algoritmo genético
     ejecutar_ag(departamento, longitud, latitud, metros_cuadrados)

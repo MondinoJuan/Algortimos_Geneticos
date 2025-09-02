@@ -215,8 +215,8 @@ def main(latitud, longitud, departamento, crear_archivo_bool = False, años_atra
             df_clima.to_csv(output_path, index=False)
         
         # Verificar datos faltantes
-        print("\nDatos faltantes por columna:")
-        print(df_clima.isnull().sum())
+        #print("\nDatos faltantes por columna:")
+        #print(df_clima.isnull().sum())
   
     else:
         print("\n❌ No se pudieron obtener datos de NASA POWER")

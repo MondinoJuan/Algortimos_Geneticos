@@ -6,13 +6,13 @@ import pandas as pd
 
 
 
-def main():
-    path = "Recuperacion_de_datos/Clima/clima_nasa_mensual_44_anios.csv"
+def main(depto):
+    path = f"Recuperacion_de_datos/Clima/clima_nasa_mensual_44_anios_de_{depto}.csv"
 
     df_clima = pd.read_csv(path)
 
-    array_14_meses_precip = prediccion_precip_GBR(df_clima)
-    array_14_meses_viento = prediccion_viento_GBR(df_clima)
+    array_14_meses_precip = prediccion_precip_GBR(path, df_clima)
+    array_14_meses_viento = prediccion_viento_GBR(path, df_clima)
     array_14_meses_hum = pred_hum(df_clima)
     array_14_meses_temp = pred_temp(df_clima)
 
