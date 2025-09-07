@@ -75,8 +75,8 @@ def entrenar_y_devolver_modelo(clima_file, head_cant=None):
     crossvalidation = KFold(n_splits=5, shuffle=True, random_state=1)
 
     GBR2 = GradientBoostingRegressor(
-        n_estimators=1000, learning_rate=0.05,
-        max_depth=3, subsample=1, random_state=1
+        n_estimators=700, learning_rate=0.05,
+        max_depth=3, subsample=0.8, random_state=1
     )
 
     score = np.mean(cross_val_score(
@@ -95,9 +95,17 @@ def entrenar_y_devolver_modelo(clima_file, head_cant=None):
     # GRÁFICAS
     plt.figure(figsize=(10, 6))
     plt.plot(df_convertido['precipitacion_mm_mes'].values, label='Valores Reales', color='blue', alpha=0.6)
+    
+    plt.plot(
+        range(len(y_train), len(y_train) + len(y_test)),
+        y_test,
+        label='Reales (test)',
+        color='black',
+        alpha=0.6
+    )
 
-    #plt.plot(range(len(y_train), len(y_train)+len(y_test)), predicciones, label='Predicciones', color='red', alpha=0.6)
-    plt.plot(predicciones, label='Predicciones', color='red', alpha=0.6)
+    plt.plot(range(len(y_train), len(y_train) + len(y_test)), predicciones, label='Predicciones', color='red', alpha=0.6)
+    #plt.plot(predicciones, label='Predicciones', color='red', alpha=0.6)
 
     plt.title('Precipitaciones Real vs Predicha')
     plt.xlabel('Índice de Muestra')
@@ -143,3 +151,8 @@ def main(clima_file, entradas_para_predecir = None, modelo = None):
             ultima_tupla = nueva_fila_df
 
         return predicciones
+    
+
+if __name__ == "__main__":
+    clima_file = f"Recuperacion_de_datos/Clima/clima_nasa_mensual_44_anios_de_Rosario.csv"
+    main(clima_file)

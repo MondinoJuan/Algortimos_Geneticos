@@ -96,8 +96,16 @@ def entrenar_y_devolver_modelo(clima_file, head_cant=None):
     plt.figure(figsize=(10, 6))
     plt.plot(df_convertido['velocidad_viento_m_s'].values, label='Valores Reales', color='blue', alpha=0.6)
 
-    #plt.plot(range(len(y_train), len(y_train)+len(y_test)), predicciones, label='Predicciones', color='red', alpha=0.6)
-    plt.plot(predicciones, label='Predicciones', color='red', alpha=0.6)
+    plt.plot(
+        range(len(y_train), len(y_train) + len(y_test)),
+        y_test,
+        label='Reales (test)',
+        color='black',
+        alpha=0.6
+    )
+
+    plt.plot(range(len(y_train), len(y_train) + len(y_test)), predicciones, label='Predicciones', color='red', alpha=0.6)
+    #plt.plot(predicciones, label='Predicciones', color='red', alpha=0.6)
 
     plt.title('Viento Real vs Predicho')
     plt.xlabel('Índice de Muestra')
@@ -143,3 +151,9 @@ def main(clima_file, entradas_para_predecir = None, modelo = None):
             ultima_tupla = nueva_fila_df
 
         return predicciones
+    
+
+
+if __name__ == "__main__":
+    clima_file = f"Recuperacion_de_datos/Clima/clima_nasa_mensual_44_anios_de_Rosario.csv"
+    main(clima_file)

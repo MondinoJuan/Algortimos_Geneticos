@@ -38,7 +38,6 @@ def obtener_precios():
     precios_dict = dict(lista_precios_hoy)
     return precios_dict
 
-precios = obtener_precios()
 
 def completoCromosoma(maximo, cantidad_genes=7):
     cromosoma = [random.random() for _ in range(cantidad_genes)]
@@ -280,7 +279,7 @@ def ciclos_con_elitismo(depto, lat, lon, area_ha, ciclos, prob_crossover, prob_m
     promedios=[]
     mejores=[]
     
-    pob = generarPoblacion(cantidadIndividuos, cant_genes, area_ha) #Poblacion inicial random
+    pob = generarPoblacion(cant_individuos, cant_genes, area_ha) #Poblacion inicial random
     fo = calculadorFuncionObjetivo(pob, toneladas, area_ha)
     fit = calculadorFitness(fo)
     rta = calculadorEstadisticos(pob, fo)
@@ -318,6 +317,7 @@ def ciclos_con_elitismo(depto, lat, lon, area_ha, ciclos, prob_crossover, prob_m
 
         if correccion:
             index = fit.index(fit_ordenados[-1])
+            precios = obtener_precios()
             pob[index] = metodo_correccion(pob[index], precios, toneladas, area_ha)
         
         fo = calculadorFuncionObjetivo(pob, toneladas, area_ha)
@@ -392,6 +392,7 @@ def ciclos_sin_elitismo(depto, lat, lon, area_ha, ciclos, prob_crossover, prob_m
         if correccion:
             fit_ordenados = sorted(fit, reverse=True)
             index = fit.index(fit_ordenados[-1])
+            precios = obtener_precios()
             pob[index] = metodo_correccion(pob[index], precios, toneladas, area_ha)
         
         pob = mutacionInvertida(pob, prob_mutacion)
@@ -596,10 +597,10 @@ if __name__ == "__main__":
     minimosPorCiclo = []
     promediosPorCiclo = []
 
-latitud = -31.4
-longitud = -64.2
-departamento = "San Nicolás"
-area_ha = 1900
+    latitud = -31.4
+    longitud = -64.2
+    departamento = "San Nicolás"
+    area_ha = 1900
 
-main(departamento, latitud, longitud, area_ha)
-#verificar_maximo(maximosPorCiclo)
+    main(departamento, latitud, longitud, area_ha)
+    #verificar_maximo(maximosPorCiclo)
