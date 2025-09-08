@@ -311,7 +311,7 @@ def ciclos_con_elitismo(depto, lat, lon, area_ha, ciclos, prob_crossover, prob_m
                 hijo1, hijo2 = crossover1Punto(padre, madre, area_ha)
                 pob_intermedia[i], pob_intermedia[i+1] = hijo1, hijo2
             
-        pob_intermedia = mutacionInvertida(pob_intermedia, prob_mutacion)
+        pob_intermedia = mutacionSwap(pob_intermedia, prob_mutacion)
         
         pob = pob_intermedia + elitistas
 
@@ -395,7 +395,7 @@ def ciclos_sin_elitismo(depto, lat, lon, area_ha, ciclos, prob_crossover, prob_m
             precios = obtener_precios()
             pob[index] = metodo_correccion(pob[index], precios, toneladas, area_ha)
         
-        pob = mutacionInvertida(pob, prob_mutacion)
+        pob = mutacionSwap(pob, prob_mutacion)
         fo = calculadorFuncionObjetivo(pob, toneladas, area_ha)
         fit = calculadorFitness(fo)
         rta = calculadorEstadisticos(pob, fo)

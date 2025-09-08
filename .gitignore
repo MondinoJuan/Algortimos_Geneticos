@@ -2,5 +2,6 @@ venv
 venv3_10
 
 _pycache_
+__pycache__
 .vscode
 catboost_info
