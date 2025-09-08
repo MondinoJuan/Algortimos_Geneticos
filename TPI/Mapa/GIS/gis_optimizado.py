@@ -20,6 +20,7 @@ class MapApp:
         
         self.coordenadas = []
         self.area_m2 = 0
+        self.area_ha = 0
         self.departamento = ""
         self.provincia = ""
         self._flask_thread = None
@@ -271,6 +272,7 @@ class MapApp:
             
             # Actualizar resultados
             hectareas = self.area_m2 / 10000
+            self.area_ha = hectareas
             if hectareas >= 1:
                 area_text = f"Área: {hectareas:.2f} hectáreas ({self.area_m2:.0f} m²)"
             else:
@@ -345,7 +347,7 @@ class MapApp:
             
             data = {
                 'coordenadas': self.coordenadas,
-                'area_m2': self.area_m2,
+                'area_ha': self.area_m2,
                 'area_hectareas': self.area_m2 / 10000,
                 'departamento': self.departamento,
                 'provincia': self.provincia,

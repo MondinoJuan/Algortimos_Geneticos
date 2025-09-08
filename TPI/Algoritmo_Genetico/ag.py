@@ -351,7 +351,8 @@ def ciclos_con_elitismo(depto, lat, lon, area_ha, ciclos, prob_crossover, prob_m
         print(f"\n SORGO: {mejores[-1][4]} || total: {suma[4]}")
         print(f"\n CEBADA: {mejores[-1][5]} || total: {suma[5]}")
         print(f"\n MANI: {mejores[-1][6]} || total: {suma[6]}")
-        print(f"\n TOTAL DE HA: {total}")
+        total_ind = mejores[-1][0] + mejores[-1][1] + mejores[-1][2] + mejores[-1][3] + mejores[-1][4] + mejores[-1][5] + mejores[-1][6]
+        print(f"\n TOTAL DE HA POBLACIÓN: {total} || TOTAL DE HA INDIVIDUO: {total_ind}")
         print("----------------------------------------------")
         
     return maximos, minimos, promedios, mejores
@@ -427,7 +428,8 @@ def ciclos_sin_elitismo(depto, lat, lon, area_ha, ciclos, prob_crossover, prob_m
         print(f"\n SORGO: {mejores[-1][4]} || total: {suma[4]}")
         print(f"\n CEBADA: {mejores[-1][5]} || total: {suma[5]}")
         print(f"\n MANI: {mejores[-1][6]} || total: {suma[6]}")
-        print(f"\n TOTAL DE HA: {total}")
+        total_ind = mejores[-1][0] + mejores[-1][1] + mejores[-1][2] + mejores[-1][3] + mejores[-1][4] + mejores[-1][5] + mejores[-1][6]
+        print(f"\n TOTAL DE HA POBLACIÓN: {total} || TOTAL DE HA INDIVIDUO: {total_ind}")
         print("----------------------------------------------")
 
     return maximos, minimos, promedios, mejores
@@ -488,7 +490,7 @@ def generar_grafico(maximos, minimos, promedios, titulo):
 
     fig.suptitle(titulo, fontsize=15)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
-    plt.savefig(titulo.replace(" ", "_") + '.png')
+    plt.savefig('Archivos/Graficas/' + titulo.replace(" ", "_") + '.png', dpi=600, bbox_inches="tight")
     plt.show()
 
 def grafico_terreno(cromosoma, titulo):
@@ -503,6 +505,7 @@ def grafico_terreno(cromosoma, titulo):
     plt.axis("off")
     plt.title(titulo, fontsize=14)
     plt.tight_layout()
+    plt.savefig(f"Archivos/Graficas/{titulo.replace(' ', '_')}.png", dpi=600, bbox_inches="tight")
     plt.show()
 
 

@@ -96,12 +96,14 @@ def plot_full_timeline_clean(period, y_true_full, n_train, test_pred, title="Rea
     ax.xaxis.set_major_locator(locator)
     ax.xaxis.set_major_formatter(ConciseDateFormatter(locator))
 
+    titulo = 'Humedad relativa (%)'
     ax.set_xlabel('Date')
-    ax.set_ylabel('Relative Humidity (%)')
+    ax.set_ylabel(titulo)
     ax.set_title(title)
     ax.legend()
     fig.autofmt_xdate()
     plt.tight_layout()
+    plt.savefig(f"Archivos/Graficas/{titulo.replace(' ', '_')}.png", dpi=600, bbox_inches="tight")
     plt.show()
 
 def train_LSTM_humedad(data):

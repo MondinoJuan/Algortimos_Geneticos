@@ -107,10 +107,12 @@ def entrenar_y_devolver_modelo(clima_file, head_cant=None):
     plt.plot(range(len(y_train), len(y_train) + len(y_test)), predicciones, label='Predicciones', color='red', alpha=0.6)
     #plt.plot(predicciones, label='Predicciones', color='red', alpha=0.6)
 
-    plt.title('Viento Real vs Predicho')
+    titulo = 'Viento Real vs Predicho'
+    plt.title(titulo)
     plt.xlabel('Índice de Muestra')
     plt.ylabel('Velocidad Viento (m/s)')
     plt.legend()
+    plt.savefig(f"Archivos/Graficas/{titulo.replace(' ', '_')}.png", dpi=600, bbox_inches="tight")
     plt.show()
 
     return GBR2
