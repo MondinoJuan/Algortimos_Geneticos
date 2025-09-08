@@ -38,7 +38,6 @@ def obtener_precios():
     precios_dict = dict(lista_precios_hoy)
     return precios_dict
 
-precios = obtener_precios()
 
 def completoCromosoma(maximo, cantidad_genes=7):
     cromosoma = [random.random() for _ in range(cantidad_genes)]
@@ -280,7 +279,7 @@ def ciclos_con_elitismo(depto, lat, lon, area_ha, ciclos, prob_crossover, prob_m
     promedios=[]
     mejores=[]
     
-    pob = generarPoblacion(cantidadIndividuos, cant_genes, area_ha) #Poblacion inicial random
+    pob = generarPoblacion(cant_individuos, cant_genes, area_ha) #Poblacion inicial random
     fo = calculadorFuncionObjetivo(pob, toneladas, area_ha)
     fit = calculadorFitness(fo)
     rta = calculadorEstadisticos(pob, fo)
@@ -312,12 +311,13 @@ def ciclos_con_elitismo(depto, lat, lon, area_ha, ciclos, prob_crossover, prob_m
                 hijo1, hijo2 = crossover1Punto(padre, madre, area_ha)
                 pob_intermedia[i], pob_intermedia[i+1] = hijo1, hijo2
             
-        pob_intermedia = mutacionInvertida(pob_intermedia, prob_mutacion)
+        pob_intermedia = mutacionSwap(pob_intermedia, prob_mutacion)
         
         pob = pob_intermedia + elitistas
 
         if correccion:
             index = fit.index(fit_ordenados[-1])
+            precios = obtener_precios()
             pob[index] = metodo_correccion(pob[index], precios, toneladas, area_ha)
         
         fo = calculadorFuncionObjetivo(pob, toneladas, area_ha)
@@ -351,7 +351,8 @@ def ciclos_con_elitismo(depto, lat, lon, area_ha, ciclos, prob_crossover, prob_m
         print(f"\n SORGO: {mejores[-1][4]} || total: {suma[4]}")
         print(f"\n CEBADA: {mejores[-1][5]} || total: {suma[5]}")
         print(f"\n MANI: {mejores[-1][6]} || total: {suma[6]}")
-        print(f"\n TOTAL DE HA: {total}")
+        total_ind = mejores[-1][0] + mejores[-1][1] + mejores[-1][2] + mejores[-1][3] + mejores[-1][4] + mejores[-1][5] + mejores[-1][6]
+        print(f"\n TOTAL DE HA POBLACIÓN: {total} || TOTAL DE HA INDIVIDUO: {total_ind}")
         print("----------------------------------------------")
         
     return maximos, minimos, promedios, mejores
@@ -392,9 +393,10 @@ def ciclos_sin_elitismo(depto, lat, lon, area_ha, ciclos, prob_crossover, prob_m
         if correccion:
             fit_ordenados = sorted(fit, reverse=True)
             index = fit.index(fit_ordenados[-1])
+            precios = obtener_precios()
             pob[index] = metodo_correccion(pob[index], precios, toneladas, area_ha)
         
-        pob = mutacionInvertida(pob, prob_mutacion)
+        pob = mutacionSwap(pob, prob_mutacion)
         fo = calculadorFuncionObjetivo(pob, toneladas, area_ha)
         fit = calculadorFitness(fo)
         rta = calculadorEstadisticos(pob, fo)
@@ -426,7 +428,8 @@ def ciclos_sin_elitismo(depto, lat, lon, area_ha, ciclos, prob_crossover, prob_m
         print(f"\n SORGO: {mejores[-1][4]} || total: {suma[4]}")
         print(f"\n CEBADA: {mejores[-1][5]} || total: {suma[5]}")
         print(f"\n MANI: {mejores[-1][6]} || total: {suma[6]}")
-        print(f"\n TOTAL DE HA: {total}")
+        total_ind = mejores[-1][0] + mejores[-1][1] + mejores[-1][2] + mejores[-1][3] + mejores[-1][4] + mejores[-1][5] + mejores[-1][6]
+        print(f"\n TOTAL DE HA POBLACIÓN: {total} || TOTAL DE HA INDIVIDUO: {total_ind}")
         print("----------------------------------------------")
 
     return maximos, minimos, promedios, mejores
@@ -487,7 +490,7 @@ def generar_grafico(maximos, minimos, promedios, titulo):
 
     fig.suptitle(titulo, fontsize=15)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
-    plt.savefig(titulo.replace(" ", "_") + '.png')
+    plt.savefig('Archivos/Graficas/' + titulo.replace(" ", "_") + '.png', dpi=600, bbox_inches="tight")
     plt.show()
 
 def grafico_terreno(cromosoma, titulo):
@@ -502,6 +505,7 @@ def grafico_terreno(cromosoma, titulo):
     plt.axis("off")
     plt.title(titulo, fontsize=14)
     plt.tight_layout()
+    plt.savefig(f"Archivos/Graficas/{titulo.replace(' ', '_')}.png", dpi=600, bbox_inches="tight")
     plt.show()
 
 
@@ -596,10 +600,10 @@ if __name__ == "__main__":
     minimosPorCiclo = []
     promediosPorCiclo = []
 
-latitud = -31.4
-longitud = -64.2
-departamento = "San Nicolás"
-area_ha = 1900
+    latitud = -31.4
+    longitud = -64.2
+    departamento = "San Nicolás"
+    area_ha = 1900
 
-main(departamento, latitud, longitud, area_ha)
-#verificar_maximo(maximosPorCiclo)
+    main(departamento, latitud, longitud, area_ha)
+    #verificar_maximo(maximosPorCiclo)

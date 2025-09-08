@@ -86,7 +86,7 @@ if __name__ == "__main__":
     # Obtenemos coordenadas y datos del campo
     longitud, latitud = calcular_centroide(app.coordenadas)
     departamento = app.departamento
-    metros_cuadrados = app.area_m2
+    metros_cuadrados = app.area_ha
 
     # Entrenamiento LSTM + GBR
     entrenar_lstm_y_gbr(latitud, longitud, departamento)
