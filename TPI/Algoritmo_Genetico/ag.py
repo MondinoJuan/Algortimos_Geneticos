@@ -404,40 +404,6 @@ def ciclos_sin_elitismo(depto, lat, lon, area_ha, ciclos, prob_crossover, prob_m
 
     return maximos, minimos, promedios, mejores
 
-# TABLAS EXCEL
-'''def crear_tabla(maximos, minimos, promedios, mejores, metodo_seleccion, elitismo_Bool):
-    cadenas = [''.join(str(num) for num in cromosoma) for cromosoma in mejores]
-    decimales = [str(cromosoma) for cromosoma in mejores]
-
-    nombreMetodo = ''
-    nombreElitismo = ''
-    nombreCantidadCiclos = str(len(maximos)-1)
-
-    if metodo_seleccion == 'r':
-        nombreMetodo = '_Ruleta'
-    else:
-        nombreMetodo = '_Torneo'
-
-    if elitismo_Bool == 1:
-        nombreElitismo = '_Elitismo'
-
-    df_nuevo = pd.DataFrame({
-        'Corrida': range(len(maximos)),
-        'Max': maximos,
-        'Min': minimos,
-        'AVG': promedios,
-        'Decimal': decimales,
-        'Mejor Cromosoma': cadenas,
-    })
-
-    archivo_excel = 'VALORES_' + nombreCantidadCiclos + 'Ciclos' + nombreMetodo + nombreElitismo + '.xlsx'
-
-    if os.path.exists(archivo_excel):
-        os.remove(archivo_excel)
-        df_nuevo.to_excel(archivo_excel, index=False)
-    else:
-        df_nuevo.to_excel(archivo_excel, index=False)'''
-
 def generar_grafico(maximos, minimos, promedios, titulo):
     x = list(range(len(maximos)))
 
@@ -477,16 +443,6 @@ def grafico_terreno(cromosoma, titulo):
     plt.tight_layout()
     plt.savefig(f"Archivos/Graficas/{titulo.replace(' ', '_')}.png", dpi=600, bbox_inches="tight")
     plt.show()
-
-
-'''def verificar_maximo(datos):
-    for i in range(1, len(datos)):
-        if datos[i] < datos[i - 1]:
-            print(f"Dato menor encontrado en índice {i}: {datos[i]} < {datos[i - 1]}")
-            break
-    else:
-        print("Todos los datos son mayores o iguales a sus antecesores.")'''
-
 
 
 def main(depto, lat, lon, area_ha):
