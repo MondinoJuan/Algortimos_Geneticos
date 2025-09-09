@@ -18,7 +18,6 @@ from Pred_Clima.pred_cond_climaticas import main as predecir_datos_clima
 '''
 La idea es crear poblaciones con los mismos datos de suelo dependiendo del departamento y un clima predecido de aca a 14 meses,
 diferenciandose en la semilla utilizada y el área a cultivar por semilla.
-Deberia usarse el problema de la mochila planteado en el TP2?
 '''
 
 SEMILLAS = ['girasol', 'soja', 'maíz', 'trigo', 'sorgo', 'cebada', 'maní']
@@ -141,35 +140,6 @@ def calculadorFitness(objetivos):
     return fitness
 
 # metodo correccion original
-'''
-def metodo_correccion(individuo, precios, toneladas, area_ha):
-    cultivos = sum(1 for x in individuo if x != 0)
-    if cultivos > 2:
-        prod_precio = []
-        individuo_modif = []
-        for idx, semilla in enumerate(SEMILLAS):
-            precio = float(precios.get(semilla))
-            tonelada = float(toneladas[idx])
-            peso = (precio/(tonelada/area_ha))
-            prod_precio.append(peso)
-        while True:
-            prod_precio_ordenados = sorted(prod_precio)
-            index = prod_precio.index(prod_precio_ordenados[0])
-            if individuo[index] == 0:
-                prod_precio[index] = prod_precio_ordenados[-1]
-            else:
-                total = individuo[index]
-                individuo[index] = 0
-                for i in range(len(individuo)):
-                    if i != index and individuo[i] != 0:
-                        individuo_modif.append(individuo[i]+(total/cultivos))
-                    else:
-                        individuo_modif.append(0)
-                break
-        return individuo_modif
-    else:
-        return individuo
-'''
 def metodo_correccion(individuo, precios, toneladas, area_ha):
     cultivos = sum(1 for x in individuo if x != 0)
     if cultivos > 2:
