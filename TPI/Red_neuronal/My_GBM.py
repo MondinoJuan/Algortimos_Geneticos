@@ -156,10 +156,13 @@ def entrenar_y_devolver_modelo(head_cant = 0):
     plt.plot(range(len(y_train), len(y_train) + len(y_test)), predicciones, 
             label='Predicciones', color='red', alpha=0.6)
 
+
+    titulo = 'Producción (tn)'
     plt.title('Producción Real vs Predicha')
     plt.xlabel('Índice de Muestra')
-    plt.ylabel('Producción (tn)')
+    plt.ylabel(titulo)
     plt.legend()
+    plt.savefig(f"Archivos/Graficas/{titulo.replace(' ', '_')}.png", dpi=600, bbox_inches="tight")
     plt.show()
 
     #df_convertido = pd.read_csv("Archivos/df_semillas_suelo_clima_convertido.csv")

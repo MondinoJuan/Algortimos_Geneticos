@@ -18,7 +18,6 @@ from Pred_Clima.pred_cond_climaticas import main as predecir_datos_clima
 '''
 La idea es crear poblaciones con los mismos datos de suelo dependiendo del departamento y un clima predecido de aca a 14 meses,
 diferenciandose en la semilla utilizada y el área a cultivar por semilla.
-Deberia usarse el problema de la mochila planteado en el TP2?
 '''
 
 SEMILLAS = ['girasol', 'soja', 'maíz', 'trigo', 'sorgo', 'cebada', 'maní']
@@ -141,35 +140,6 @@ def calculadorFitness(objetivos):
     return fitness
 
 # metodo correccion original
-'''
-def metodo_correccion(individuo, precios, toneladas, area_ha):
-    cultivos = sum(1 for x in individuo if x != 0)
-    if cultivos > 2:
-        prod_precio = []
-        individuo_modif = []
-        for idx, semilla in enumerate(SEMILLAS):
-            precio = float(precios.get(semilla))
-            tonelada = float(toneladas[idx])
-            peso = (precio/(tonelada/area_ha))
-            prod_precio.append(peso)
-        while True:
-            prod_precio_ordenados = sorted(prod_precio)
-            index = prod_precio.index(prod_precio_ordenados[0])
-            if individuo[index] == 0:
-                prod_precio[index] = prod_precio_ordenados[-1]
-            else:
-                total = individuo[index]
-                individuo[index] = 0
-                for i in range(len(individuo)):
-                    if i != index and individuo[i] != 0:
-                        individuo_modif.append(individuo[i]+(total/cultivos))
-                    else:
-                        individuo_modif.append(0)
-                break
-        return individuo_modif
-    else:
-        return individuo
-'''
 def metodo_correccion(individuo, precios, toneladas, area_ha):
     cultivos = sum(1 for x in individuo if x != 0)
     if cultivos > 2:
@@ -434,40 +404,6 @@ def ciclos_sin_elitismo(depto, lat, lon, area_ha, ciclos, prob_crossover, prob_m
 
     return maximos, minimos, promedios, mejores
 
-# TABLAS EXCEL
-'''def crear_tabla(maximos, minimos, promedios, mejores, metodo_seleccion, elitismo_Bool):
-    cadenas = [''.join(str(num) for num in cromosoma) for cromosoma in mejores]
-    decimales = [str(cromosoma) for cromosoma in mejores]
-
-    nombreMetodo = ''
-    nombreElitismo = ''
-    nombreCantidadCiclos = str(len(maximos)-1)
-
-    if metodo_seleccion == 'r':
-        nombreMetodo = '_Ruleta'
-    else:
-        nombreMetodo = '_Torneo'
-
-    if elitismo_Bool == 1:
-        nombreElitismo = '_Elitismo'
-
-    df_nuevo = pd.DataFrame({
-        'Corrida': range(len(maximos)),
-        'Max': maximos,
-        'Min': minimos,
-        'AVG': promedios,
-        'Decimal': decimales,
-        'Mejor Cromosoma': cadenas,
-    })
-
-    archivo_excel = 'VALORES_' + nombreCantidadCiclos + 'Ciclos' + nombreMetodo + nombreElitismo + '.xlsx'
-
-    if os.path.exists(archivo_excel):
-        os.remove(archivo_excel)
-        df_nuevo.to_excel(archivo_excel, index=False)
-    else:
-        df_nuevo.to_excel(archivo_excel, index=False)'''
-
 def generar_grafico(maximos, minimos, promedios, titulo):
     x = list(range(len(maximos)))
 
@@ -507,16 +443,6 @@ def grafico_terreno(cromosoma, titulo):
     plt.tight_layout()
     plt.savefig(f"Archivos/Graficas/{titulo.replace(' ', '_')}.png", dpi=600, bbox_inches="tight")
     plt.show()
-
-
-'''def verificar_maximo(datos):
-    for i in range(1, len(datos)):
-        if datos[i] < datos[i - 1]:
-            print(f"Dato menor encontrado en índice {i}: {datos[i]} < {datos[i - 1]}")
-            break
-    else:
-        print("Todos los datos son mayores o iguales a sus antecesores.")'''
-
 
 
 def main(depto, lat, lon, area_ha):

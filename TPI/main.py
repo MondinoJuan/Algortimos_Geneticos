@@ -101,7 +101,10 @@ if __name__ == "__main__":
 
 
     # Ejecutar algoritmo genético
-    ejecutar_ag(departamento, longitud, latitud, metros_cuadrados)
+    respuesta = 's'
+    while respuesta == 's':
+        ejecutar_ag(departamento, longitud, latitud, metros_cuadrados)
+        respuesta = input("\nDesea ejecutar el algoritmo genético con otros parámetros? (si = s, no = n) ").strip().lower()
 
     print("FIN DEL PROGRAMA")
     sys.exit(0)
