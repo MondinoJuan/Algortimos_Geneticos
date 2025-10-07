@@ -1,6 +1,7 @@
 import os
 import time
-from capitales import obtenerCapitales, mostrarCapitales, mostrarCapital, obtenerDistancias
+from capitales import obtenerCapitales, mostrarCapitales, mostrarCapital, obtenerDistancias, mostrarDistanciasParciales, visualizarRecorrido
+from busquedaHeuristica import busquedaHeuristica
 
 def limpiarPantalla():
     if os.name == 'nt':
@@ -11,21 +12,22 @@ def limpiarPantalla():
 def pausa():
     input("\nPresione Enter para continuar...")
 
+def mostrarTitulo():
+    print("-"*100)
+    print("\t"*5+"PROBLEMA DE LA MOCHILA")
+    print("-"*100+"\n")
+
 def submenuCapital(capitales):
     while True:
         limpiarPantalla()
-        print("LISTA DE CAPITALES PROVINCIALES")
+        print("Capitales provinciales:")
         mostrarCapitales(capitales)
         try:
             opcion = int(input("\nSeleccione una capital de inicio (1-24): "))
             if 1 <= opcion <= 24:
                 limpiarPantalla()
-                print("\nCAPITAL INICIAL SELECCIONADA")
-                indexCapital = opcion - 1
-                mostrarCapital(capitales, indexCapital)
-                input("\nPresione Enter para continuar...")
-                limpiarPantalla()
-                break
+                indiceOrigen = opcion - 1
+                return indiceOrigen
             else:
                 print(f"\nIngrese un número entero entre 1 y {len(capitales)}")
                 pausa()
@@ -63,10 +65,8 @@ def menu():
     capitales = obtenerCapitales()
     distancias = obtenerDistancias()
     while True:
-        limpiarPantalla() 
-        print("-"*100)
-        print("\t"*5+"PROBLEMA DE LA MOCHILA")
-        print("-"*100+"\n")
+        limpiarPantalla()
+        mostrarTitulo()
         print("1. Obtener ruta mínima desde un origen mediante una Búsqueda Heurística")
         print("2. Obtener ruta mínima mediante una Búsqueda Heurística")
         print("3. Obtener ruta mínima mediante un Algoritmo Genético")
@@ -74,8 +74,14 @@ def menu():
         try:
             opcion = int(input("\nSeleccione una opción (0-3): "))
             if opcion == 1:
-                submenuCapital(capitales)
-                print("Funcionalidad en construcción")
+                indiceOrigen = submenuCapital(capitales)
+                recorrido, distanciasParciales, distanciaRecorrida = busquedaHeuristica(distancias, indiceOrigen)
+                print(f"\nOrigen: {mostrarCapital(capitales, indiceOrigen)}")
+                mostrarCapital(capitales, indiceOrigen)
+                print(f"\nDistancias parciales:")
+                mostrarDistanciasParciales(distanciasParciales, capitales, recorrido)
+                print(f"Distancia total: {distanciaRecorrida} km")
+                visualizarRecorrido(recorrido, capitales, opcion)
                 pausa()
             elif opcion == 2:
                 limpiarPantalla()

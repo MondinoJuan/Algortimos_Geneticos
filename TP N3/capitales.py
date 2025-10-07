@@ -1,4 +1,6 @@
 import pandas as pd
+import folium
+import webbrowser
 
 def obtenerCapitales():
     return [
@@ -29,20 +31,77 @@ def obtenerCapitales():
     ]
 
 def mostrarCapitales(capitales):
-    for i, [capital, provincia, _, _] in enumerate(capitales, 1):
+    for i, [capital, provincia, _, _] in enumerate(capitales):
         if (i == 0):
-            print(f"{i:2d}. {capital:<25}")
+            print(f"\t{i+1:2d}. {capital}")
         else:
-            print(f"{i:2d}. {capital:<25} → {provincia}")
+            print(f"\t{i+1:2d}. {capital}, {provincia}")
 
 def mostrarCapital(capitales, indexCapital):
     capital, provincia, _, _ = capitales[indexCapital]
     if (indexCapital == 0):
-        print(f"\tCapital: {capital}")
+        return(f"{capital}")
     else:
-        print(f"\tCapital: {capital}")
-        print(f"\tProvincia: {provincia}")
+        return(f"{capital}, {provincia}")
 
 def obtenerDistancias():
     df = pd.read_excel('TablaCapitales.xlsx')
-    return df.iloc[:24, :25]
+    soloDatos = df.iloc[:, 1:].to_numpy()
+    return soloDatos[:24, :25]
+
+def mostrarDistanciasParciales(distanciasParciales, capitales, recorrido):
+    for i in range(len(distanciasParciales)):
+        origenParcial = capitales[recorrido[i]][0]
+        destinoParcial = capitales[recorrido[i+1]][0]
+        print(f"\tDistancia {i+1:2d} : {distanciasParciales[i]} km")
+        print(f"\t{origenParcial} → {destinoParcial}\n")
+
+def visualizarRecorrido(recorrido, capitales, opcionBusqueda):
+    mapa = folium.Map(location=[-38.4161, -63.6167], zoom_start=5)
+    for i, [capital, _, latitud, longitud] in enumerate(capitales):
+        folium.Marker(
+            location = [latitud, longitud],
+            popup = capital,
+            tooltip = capital,
+            icon=folium.Icon(color='red' if i == recorrido[0] else 'blue')
+        ).add_to(mapa)
+    puntosRecorrido = []
+    for i in recorrido:
+        latitud = capitales[i][2]
+        longitud = capitales[i][3]
+        punto = [latitud, longitud]
+        puntosRecorrido.append(punto)
+    folium.PolyLine(
+        locations = puntosRecorrido,
+        color='red',
+        weight=2,
+        opacity=0.8,
+        popup='Recorrido'
+    ).add_to(mapa)
+    for orden, indexCapital in enumerate(recorrido[:-1]):
+        latitud = capitales[indexCapital][2]
+        longitud = capitales[indexCapital][3]
+        folium.Marker(
+            location=[latitud, longitud],
+            icon=folium.DivIcon(
+                html=f'''<div style="
+                    font-size: 10pt; 
+                    color: white; 
+                    background-color: green; 
+                    border-radius: 50%; 
+                    width: 22px; 
+                    height: 22px; 
+                    text-align: center; 
+                    line-height: 22px;
+                    font-weight: bold;
+                    border: 2px solid white;
+                ">{orden + 1}</div>'''
+            )
+        ).add_to(mapa)
+    if opcionBusqueda == 1:
+        archivo = 'recorridoViajanteConOrigen.html'
+    mapa.save(archivo)
+    print(f"\nMapa guardado en '{archivo}'")
+    webbrowser.open(archivo)
+    print("Abriendo mapa en el navegador...")
+    return mapa
