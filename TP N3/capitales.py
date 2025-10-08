@@ -99,7 +99,11 @@ def visualizarRecorrido(recorrido, capitales, opcionBusqueda):
             )
         ).add_to(mapa)
     if opcionBusqueda == 1:
-        archivo = 'recorridoViajanteConOrigen.html'
+        archivo = f"recorridoViajanteDesde{recorrido[0]+1}.html"
+    elif opcionBusqueda == 2:
+        archivo = "recorridoViajanteHeuristica.html"
+    elif opcionBusqueda == 3:
+        archivo = "recorridoViajanteAlgGen.html"
     mapa.save(archivo)
     print(f"\nMapa guardado en '{archivo}'")
     webbrowser.open(archivo)

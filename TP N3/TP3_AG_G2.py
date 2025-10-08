@@ -1,7 +1,7 @@
 import os
 import time
 from capitales import obtenerCapitales, mostrarCapitales, mostrarCapital, obtenerDistancias, mostrarDistanciasParciales, visualizarRecorrido
-from busquedaHeuristica import busquedaHeuristica
+from busquedaHeuristica import busquedaHeuristica, mejorRecorrido
 
 def limpiarPantalla():
     if os.name == 'nt':
@@ -11,11 +11,6 @@ def limpiarPantalla():
 
 def pausa():
     input("\nPresione Enter para continuar...")
-
-def mostrarTitulo():
-    print("-"*100)
-    print("\t"*5+"PROBLEMA DE LA MOCHILA")
-    print("-"*100+"\n")
 
 def submenuCapital(capitales):
     while True:
@@ -35,6 +30,10 @@ def submenuCapital(capitales):
             print(f"\nError: Ingrese un número entero válido")
             pausa()
 
+def mostrarTitulo():
+    print("-"*100)
+    print("\t"*5+"PROBLEMA DE LA MOCHILA")
+    print("-"*100+"\n")
 
 def submenuAlgGen():
     while True:
@@ -61,6 +60,15 @@ def submenuAlgGen():
             print("\nError: Ingrese un número entero válido")
             pausa()
 
+def mostrarResultado(capitales, indiceOrigen, distanciasParciales, recorrido, distanciaRecorrida, demora, opcion):
+    print(f"\nOrigen: {mostrarCapital(capitales, indiceOrigen)}")
+    mostrarCapital(capitales, indiceOrigen)
+    print(f"\nDistancias parciales:")
+    mostrarDistanciasParciales(distanciasParciales, capitales, recorrido)
+    print(f"Distancia total: {distanciaRecorrida} km")
+    print(f"\nTiempo de demora: {demora:.6f} segundos")
+    visualizarRecorrido(recorrido, capitales, opcion)
+
 def menu():
     capitales = obtenerCapitales()
     distancias = obtenerDistancias()
@@ -75,17 +83,13 @@ def menu():
             opcion = int(input("\nSeleccione una opción (0-3): "))
             if opcion == 1:
                 indiceOrigen = submenuCapital(capitales)
-                recorrido, distanciasParciales, distanciaRecorrida = busquedaHeuristica(distancias, indiceOrigen)
-                print(f"\nOrigen: {mostrarCapital(capitales, indiceOrigen)}")
-                mostrarCapital(capitales, indiceOrigen)
-                print(f"\nDistancias parciales:")
-                mostrarDistanciasParciales(distanciasParciales, capitales, recorrido)
-                print(f"Distancia total: {distanciaRecorrida} km")
-                visualizarRecorrido(recorrido, capitales, opcion)
+                recorrido, distanciasParciales, distanciaRecorrida, demora = busquedaHeuristica(distancias, indiceOrigen, opcion)
+                mostrarResultado(capitales, indiceOrigen, distanciasParciales, recorrido, distanciaRecorrida, demora, opcion)
                 pausa()
             elif opcion == 2:
                 limpiarPantalla()
-                print("Funcionalidad en construcción")
+                recorrido, distanciasParciales, distanciaRecorrida, indiceOrigen, demora = mejorRecorrido(distancias)
+                mostrarResultado(capitales, indiceOrigen, distanciasParciales, recorrido, distanciaRecorrida, demora, opcion)
                 pausa()
             elif opcion == 3:
                 limpiarPantalla()
@@ -94,7 +98,7 @@ def menu():
             elif opcion == 0:
                 limpiarPantalla()
                 print("\n¡Hasta luego!")
-                time.sleep(5)
+                #time.sleep(5)
                 limpiarPantalla()
                 break
             else:
