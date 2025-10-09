@@ -36,7 +36,7 @@ def submenuCapital(capitales):
             print(f"\nError: Ingrese un número entero válido")
             pausa()
 
-def menuAlgGen(distancias):
+def menuAlgGen(capitales, distancias):
     opcionElitismo = None
     opcionSeleccion = None
     while opcionElitismo is None:
@@ -68,7 +68,7 @@ def menuAlgGen(distancias):
             if opcion == 1 or opcion == 2:
                 opcionSeleccion = opcion
             elif opcion == 3:
-                return menuAlgGen()
+                return menuAlgGen(capitales, distancias)
             elif opcion == 0:
                 limpiarPantalla()
                 return
@@ -79,10 +79,9 @@ def menuAlgGen(distancias):
             print("\nError: Ingrese un número entero válido")
             pausa()
     limpiarPantalla()
-    #print(f"{opcionElitismo}, {opcionSeleccion}\n")
-    algoritmoGenetico(opcionElitismo, opcionSeleccion, distancias)
-    # recorrido, distanciasParciales, distanciaRecorrida, indiceOrigen, demora = algoritmoGenetico(opcionElitismo, opcionSeleccion)
-    #print("Mostrar resultado AG")
+    recorrido, distanciasParciales, distanciaRecorrida, demora = algoritmoGenetico(opcionElitismo, opcionSeleccion, distancias)
+    indiceOrigen = recorrido[0]
+    mostrarResultado(capitales, indiceOrigen, distanciasParciales, recorrido, distanciaRecorrida, demora, 3)
     pausa()
 
 def mostrarResultado(capitales, indiceOrigen, distanciasParciales, recorrido, distanciaRecorrida, demora, opcion):
@@ -117,11 +116,11 @@ def menu():
                 mostrarResultado(capitales, indiceOrigen, distanciasParciales, recorrido, distanciaRecorrida, demora, opcion)
                 pausa()
             elif opcion == 3:
-                menuAlgGen(distancias)
+                menuAlgGen(capitales, distancias)
             elif opcion == 0:
                 limpiarPantalla()
-                print("\n¡Hasta luego!")
-                #time.sleep(5)
+                print("¡Hasta luego!")
+                time.sleep(5)
                 limpiarPantalla()
                 break
             else:

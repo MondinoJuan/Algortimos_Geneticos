@@ -47,7 +47,8 @@ def mostrarCapital(capitales, indexCapital):
 def obtenerDistancias():
     df = pd.read_excel('TablaCapitales.xlsx')
     soloDatos = df.iloc[:, 1:].to_numpy()
-    return soloDatos[:24, :25]
+    distancias = soloDatos[:24, :25].astype(float).tolist()
+    return distancias
 
 def mostrarDistanciasParciales(distanciasParciales, capitales, recorrido):
     for i in range(len(distanciasParciales)):

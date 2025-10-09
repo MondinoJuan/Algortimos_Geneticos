@@ -15,7 +15,7 @@ def busquedaHeuristica(distancias, indiceCapitalInicial, opcion = None):
         indiceMejorCapital = -1
         for indiceCapital in range(cantCapitales):
             if not visitadas[indiceCapital]:
-                distancia = distancias[indiceCapitalActual, indiceCapital]
+                distancia = distancias[indiceCapitalActual][indiceCapital]
                 if distancia < mejorDistancia:
                     mejorDistancia = distancia
                     indiceMejorCapital = indiceCapital
@@ -24,7 +24,7 @@ def busquedaHeuristica(distancias, indiceCapitalInicial, opcion = None):
         recorrido.append(indiceMejorCapital)
         visitadas[indiceMejorCapital] = True
         indiceCapitalActual = indiceMejorCapital
-    distanciaVuelta = distancias[indiceCapitalActual, indiceCapitalInicial]
+    distanciaVuelta = distancias[indiceCapitalActual][indiceCapitalInicial]
     distanciasParciales.append(distanciaVuelta)
     distanciaTotal += distanciaVuelta
     recorrido.append(indiceCapitalInicial)
@@ -41,7 +41,7 @@ def mejorRecorridoHeuristica(distancias):
     distanciasTotales = []
     for indiceCapital in range(cantCapitales):
         _, _, distanciaTotal = busquedaHeuristica(distancias, indiceCapital)
-        distanciasTotales.append(float(distanciaTotal))
+        distanciasTotales.append(distanciaTotal)
     indiceMejorDistancia = distanciasTotales.index(min(distanciasTotales))
     recorrido, distanciasParciales, distanciaTotal = busquedaHeuristica(distancias, indiceMejorDistancia)
     tiempoFinal = perf_counter()
