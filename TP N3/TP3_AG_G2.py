@@ -1,7 +1,8 @@
 import os
 import time
 from capitales import obtenerCapitales, mostrarCapitales, mostrarCapital, obtenerDistancias, mostrarDistanciasParciales, visualizarRecorrido
-from busquedaHeuristica import busquedaHeuristica, mejorRecorrido
+from busquedaHeuristica import busquedaHeuristica, mejorRecorridoHeuristica
+from algoritmoGenetico import algoritmoGenetico
 
 def limpiarPantalla():
     if os.name == 'nt':
@@ -11,6 +12,11 @@ def limpiarPantalla():
 
 def pausa():
     input("\nPresione Enter para continuar...")
+
+def mostrarTitulo():
+    print("-"*100)
+    print("\t"*5+"PROBLEMA DE LA MOCHILA")
+    print("-"*100+"\n")
 
 def submenuCapital(capitales):
     while True:
@@ -30,35 +36,54 @@ def submenuCapital(capitales):
             print(f"\nError: Ingrese un número entero válido")
             pausa()
 
-def mostrarTitulo():
-    print("-"*100)
-    print("\t"*5+"PROBLEMA DE LA MOCHILA")
-    print("-"*100+"\n")
-
-def submenuAlgGen():
-    while True:
+def menuAlgGen(distancias):
+    opcionElitismo = None
+    opcionSeleccion = None
+    while opcionElitismo is None:
         limpiarPantalla()
-        print("ALGORITMO GENÉTICO")
-        print("1. Algoritmo Genético Sin Elitismo")
-        print("2. Algoritmo Genético Con Elitismo")
-        print("0. Volver al Menú Principal")
+        print("1. Realizar Algoritmo Genético Sin Elitismo")
+        print("2. Realizar Algoritmo Genético Con Elitismo")
+        print("0. Volver al menú principal")
         try:
-            opcion = int(input("\nSeleccione una opción (0-2): "))
-            if opcion == 1:
-                print("Funcionalidad en construcción")
-                pausa()
-            elif opcion == 2:
-                print("Funcionalidad en construcción")
-                pausa()
+            opcion = int(input("\nSeleccione si el Algoritmo Genético se realiza con o sin Elitismo (0-2): "))
+            if opcion == 1 or opcion == 2:
+                opcionElitismo = opcion
             elif opcion == 0:
                 limpiarPantalla()
-                break
+                return
             else:
                 print("\nIngrese un número entero entre 0 y 2")
                 pausa()
         except ValueError:
             print("\nError: Ingrese un número entero válido")
             pausa()
+    while opcionSeleccion is None:
+        limpiarPantalla()
+        print("1. Realizar Algoritmo Genético con selección mediante Ruleta")
+        print("2. Realizar Algoritmo Genético con selección mediante Torneo")
+        print("3. Volver al menú anterior")
+        print("0. Volver al menú principal")
+        try:
+            opcion = int(input("\nSeleccione si la selección se realiza mediante Ruleta o Torneo (0-3): "))
+            if opcion == 1 or opcion == 2:
+                opcionSeleccion = opcion
+            elif opcion == 3:
+                return menuAlgGen()
+            elif opcion == 0:
+                limpiarPantalla()
+                return
+            else:
+                print("\nIngrese un número entero entre 0 y 3")
+                pausa()
+        except ValueError:
+            print("\nError: Ingrese un número entero válido")
+            pausa()
+    limpiarPantalla()
+    #print(f"{opcionElitismo}, {opcionSeleccion}\n")
+    algoritmoGenetico(opcionElitismo, opcionSeleccion, distancias)
+    # recorrido, distanciasParciales, distanciaRecorrida, indiceOrigen, demora = algoritmoGenetico(opcionElitismo, opcionSeleccion)
+    #print("Mostrar resultado AG")
+    pausa()
 
 def mostrarResultado(capitales, indiceOrigen, distanciasParciales, recorrido, distanciaRecorrida, demora, opcion):
     print(f"\nOrigen: {mostrarCapital(capitales, indiceOrigen)}")
@@ -88,13 +113,11 @@ def menu():
                 pausa()
             elif opcion == 2:
                 limpiarPantalla()
-                recorrido, distanciasParciales, distanciaRecorrida, indiceOrigen, demora = mejorRecorrido(distancias)
+                recorrido, distanciasParciales, distanciaRecorrida, indiceOrigen, demora = mejorRecorridoHeuristica(distancias)
                 mostrarResultado(capitales, indiceOrigen, distanciasParciales, recorrido, distanciaRecorrida, demora, opcion)
                 pausa()
             elif opcion == 3:
-                limpiarPantalla()
-                print("Funcionalidad en construcción")
-                pausa()
+                menuAlgGen(distancias)
             elif opcion == 0:
                 limpiarPantalla()
                 print("\n¡Hasta luego!")

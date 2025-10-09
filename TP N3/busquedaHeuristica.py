@@ -1,6 +1,6 @@
 from time import perf_counter
 
-def busquedaHeuristica(distancias, indiceCapitalInicial, opcion=None):
+def busquedaHeuristica(distancias, indiceCapitalInicial, opcion = None):
     if opcion == 1:
         tiempoInicial = perf_counter()
     cantCapitales = len(distancias)
@@ -35,7 +35,7 @@ def busquedaHeuristica(distancias, indiceCapitalInicial, opcion=None):
     else:
         return recorrido, distanciasParciales, distanciaTotal
 
-def mejorRecorrido(distancias):
+def mejorRecorridoHeuristica(distancias):
     tiempoInicial = perf_counter()
     cantCapitales = len(distancias)
     distanciasTotales = []
