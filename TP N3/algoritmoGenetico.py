@@ -33,7 +33,7 @@ def calculadorEstadisticos(poblacion, aptitudes):
     maxAptitudes = max(aptitudes)
     minAptitudes = min(aptitudes)
     mejorCromosoma = poblacion[aptitudes.index(maxAptitudes)][:]
-    avgAptitudes = round((sum(aptitudes)/len(aptitudes)),4)
+    avgAptitudes = round((sum(aptitudes)/len(aptitudes)))
     return [maxAptitudes, minAptitudes, avgAptitudes, mejorCromosoma]
 
 def seleccionRuleta(poblacion, aptitudes, cantidadIndividuos):
@@ -184,7 +184,7 @@ def crearTabla(maximos, minimos, promedios, mejores, metodoSeleccion, opcionElit
     nombreElitismo = '_Elitismo' if opcionElitismo == 2 else ''
     nombreCantidadCiclos = str(len(maximos) - 1)
     cadenas = ['->'.join(str(ciudad) for ciudad in cromosoma) for cromosoma in mejores]
-    distanciasTotales = [f"{1/aptitudMaxima:.2f}" if aptitudMaxima > 0 else "inf" for aptitudMaxima in maximos]
+    distanciasTotales = [f"{(1/aptitudMaxima - 1):.2f}" if aptitudMaxima > 0 else "inf" for aptitudMaxima in maximos]
     dfNuevo = pd.DataFrame({
         'Generacion': range(len(maximos)),
         'Max_Fitness': maximos,
@@ -194,9 +194,11 @@ def crearTabla(maximos, minimos, promedios, mejores, metodoSeleccion, opcionElit
         'Mejor_Recorrido': cadenas,
     })
     archivoExcel = f'AG_{nombreCantidadCiclos}Ciclos{nombreMetodo}{nombreElitismo}.xlsx'
-    if os.path.exists(archivoExcel):
-        os.remove(archivoExcel)
-    dfNuevo.to_excel(archivoExcel, index=False)
+    ruta = os.path.join("Excels", archivoExcel)
+    if os.path.exists(ruta):
+        os.remove(ruta)
+    dfNuevo.to_excel(ruta, index=False)
+    dfNuevo.to_excel(ruta, index=False, float_format="%.8f")
     print(f"Tabla generada: {archivoExcel}")
 
 def generarGrafico(maximos, minimos, promedios, titulo):
@@ -212,7 +214,7 @@ def generarGrafico(maximos, minimos, promedios, titulo):
     ax.legend(fontsize=10)
     plt.tight_layout()
     nombreArchivo = titulo.replace(" ", "_") + '.png'
-    plt.savefig(nombreArchivo, dpi=300)
+    plt.savefig(f"Fotos/{nombreArchivo}", dpi=300)
     print(f"Gráfico guardado en: {nombreArchivo}")
     plt.close(fig)
 
@@ -231,7 +233,7 @@ def calcularDistanciaRecorrido(recorrido, distancias):
 
 def algoritmoGenetico(opcionElitismo, opcionSeleccion, distancias):
     tiempoInicial = perf_counter()
-    cantidadCiclos = 200
+    cantidadCiclos = 20000
     probCrossover = 0.85
     probMutacion = 0.10
     cantidadIndividuos = 50

@@ -1,5 +1,6 @@
 import os
 import time
+# Usa openpyxl
 from capitales import obtenerCapitales, mostrarCapitales, mostrarCapital, obtenerDistancias, mostrarDistanciasParciales, visualizarRecorrido
 from busquedaHeuristica import busquedaHeuristica, mejorRecorridoHeuristica
 from algoritmoGenetico import algoritmoGenetico
@@ -130,5 +131,6 @@ def menu():
             print("\nError: Ingrese un número entero válido")
             pausa()
 
-#! Programa Principal
-menu()
+
+if __name__ == "__main__":
+    menu()
