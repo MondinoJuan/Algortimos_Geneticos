@@ -186,3 +186,7 @@ def main(entradas_para_predecir = None):
         predicciones = modelo.predict(entradas_para_predecir)
 
         return predicciones
+    
+
+if __name__ == "__main__":
+    main()

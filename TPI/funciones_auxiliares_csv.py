@@ -1,5 +1,6 @@
 import pandas as pd
 import ast
+import numpy as np
 
 def expand_array_columns(csv_path = "Archivos/df_con_prod.csv"):
     # Leer CSV
@@ -74,6 +75,20 @@ def create_df_with_differents_outputs():
     #df_con_cosecha["cultivo_nombre"] = df_con_cosecha["cultivo_nombre"].str.lower()
     df_con_prod["cultivo_nombre"] = df_con_prod["cultivo_nombre"].str.lower()
     #df_con_rend["cultivo_nombre"] = df_con_rend["cultivo_nombre"].str.lower()
+
+    # --- Eliminar filas con datos faltantes o infinitos ---
+    # 1) Pasar ±inf a NaN (scikit-learn también los rechaza)
+    df_final = df_final.replace([np.inf, -np.inf], np.nan)
+
+    # 2) Marcar filas con al menos un NaN
+    mask_nan = df_final.isna().any(axis=1)
+
+    # 3) (Opcional) ver cuántas vas a eliminar
+    print("Filas eliminadas por NaN/inf:", int(mask_nan.sum()))
+
+    # 4) Filtrar y resetear índice
+    df_final = df_final[~mask_nan].reset_index(drop=True)
+    # --- fin limpieza ---
 
     #df_con_cosecha.to_csv('Archivos/df_con_cosecha.csv', index=False)
     df_con_prod.to_csv('Archivos/df_con_prod.csv', index=False)

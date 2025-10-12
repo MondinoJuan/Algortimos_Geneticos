@@ -16,20 +16,6 @@ from Mapa.GIS.departamento import encontrar_departamento as transformo_coord_a_d
 
 
 # -----------------------------
-# CREACIÓN DEL MODELO LSTM
-# -----------------------------
-def build_lstm_model(input_shape):
-    model = Sequential()
-    model.add(Input(shape=input_shape))
-    model.add(LSTM(128, return_sequences=False))
-    model.add(Dropout(0.3))
-    model.add(Dense(64, activation='relu'))
-    model.add(Dense(1, activation='linear'))  # Producción en kg
-    model.compile(optimizer=Adam(learning_rate=0.001), loss='mse', metrics=['mae'])
-    return model
-
-
-# -----------------------------
 # Filtro el departamento
 # -----------------------------
 def solo_departamento(coord):
@@ -42,15 +28,92 @@ def calcular_centroide(coord_list):
     centroid = multipoint.centroid
     return (centroid.x, centroid.y)  # devuelve (lon, lat)
 
+# -----------------------------
+# Si quiero usar cache
 
 def agregar_clima_por_departamento(df_suelo_semillas, n_meses=14):
     df_suelo_semillas = df_suelo_semillas.copy()
 
-    # Iterar sobre cada departamento en df_suelo_promedio
-    for _, row in df_suelo_semillas.iterrows():
+    # Cache de datos climáticos por coordenadas (evita re-llamar a la API)
+    clima_cache = {}
+    # Cache de "ventanas" ya calculadas: (coords_key, variable, año_siembra) -> lista de valores
+    ventana_cache = {}
+
+    total = len(df_suelo_semillas)
+
+    for i, (_, row) in enumerate(df_suelo_semillas.iterrows(), start=1):
         depto = row['departamento_nombre']
         lon_str, lat_str = row['coords'].strip("()").split(",")
         lon, lat = float(lon_str), float(lat_str)
+
+        print(f"[{i}/{total}] Procesando depto={depto} (lon={lon}, lat={lat})")
+
+        # Elegí una clave estable para el cache. Si el 'depto' no cambia la respuesta de la API,
+        # podés dejar solo coords; si sí la cambia, incluí depto en la clave.
+        coords_key = (round(lon, 5), round(lat, 5))  # o row['coords'] si siempre viene igual
+
+        # Traer/recuperar df_clima_filtrado desde cache o API
+        if coords_key in clima_cache:
+            df_clima_filtrado = clima_cache[coords_key]
+            # print(f"[{i}/{total}] Re-uso clima cacheado para {coords_key} (depto={depto})")
+        else:
+            # print(f"[{i}/{total}] Consultando clima para {coords_key} (depto={depto})")
+            df_clima = recupero_datos_clima_mensual(lon, lat, depto)
+            df_clima['fecha'] = pd.to_datetime(df_clima['fecha'], errors='coerce')
+            df_clima_filtrado = df_clima.dropna(thresh=len(df_clima) * 0.15, axis=1).copy()
+            clima_cache[coords_key] = df_clima_filtrado  # guardo en cache
+
+        # Filtrar semillas de este departamento (si hay varios años para el mismo depto)
+        mask = df_suelo_semillas['departamento_nombre'] == depto
+
+        for variable in ['temperatura_media_C', 'humedad_relativa_%', 'velocidad_viento_m_s', 'precipitacion_mm_mes']:
+
+            def obtener_clima_previo(año_siembra):
+                # Ver si ya calculamos esta ventana para (coords, variable, año)
+                vkey = (coords_key, variable, int(año_siembra))
+                if vkey in ventana_cache:
+                    return ventana_cache[vkey]
+
+                # Crear fecha límite y seleccionar datos previos
+                fecha_limite = pd.Timestamp(year=int(año_siembra) - 1, month=12, day=31)
+                clima_previo = df_clima_filtrado[df_clima_filtrado['fecha'] <= fecha_limite]
+
+                if len(clima_previo) == 0:
+                    # print(f"  - No hay datos climáticos para {depto} antes de {año_siembra}")
+                    ventana_cache[vkey] = []
+                    return ventana_cache[vkey]
+
+                valores = clima_previo[variable].tail(n_meses).tolist()
+                while len(valores) < n_meses:
+                    valores = [np.nan] + valores
+
+                ventana_cache[vkey] = valores  # guardo en cache
+                return valores
+
+            # Aplicar por año de siembra para todas las filas de este depto
+            df_suelo_semillas.loc[mask, variable] = (
+                df_suelo_semillas.loc[mask, 'anio'].apply(obtener_clima_previo)
+            )
+
+    return df_suelo_semillas
+
+# -----------------------------
+
+'''def agregar_clima_por_departamento(df_suelo_semillas, n_meses=14):
+    df_suelo_semillas = df_suelo_semillas.copy()
+    total = len(df_suelo_semillas)
+
+    # Iterar sobre cada departamento en df_suelo_promedio
+    for i, (_, row) in enumerate(df_suelo_semillas.iterrows(), start=1):
+    #for i, row in enumerate(df_suelo_semillas.itertuples(index=False), start=1):
+        depto = row['departamento_nombre']
+        #depto = row.departamento_nombre
+        lon_str, lat_str = row['coords'].strip("()").split(",")
+        #lon_str, lat_str = row.coords.strip("()").split(",")
+        lon, lat = float(lon_str), float(lat_str)
+
+        print(f"[{i}/{total}] Procesando depto={depto} (lon={lon}, lat={lat})")
+        #print(f"[{i}/{total}] Procesando depto={depto}")
 
         #df_clima = procesar_datos_mensuales(df_clima_diario)
         df_clima = recupero_datos_clima_mensual(lon, lat, depto)
@@ -60,9 +123,7 @@ def agregar_clima_por_departamento(df_suelo_semillas, n_meses=14):
         # Filtrar semillas de este departamento
         mask = df_suelo_semillas['departamento_nombre'] == depto
 
-        for variable in ['temperatura_media_C','humedad_relativa_%',
-                 'velocidad_viento_m_s',
-                 'precipitacion_mm_mes']:
+        for variable in ['temperatura_media_C','humedad_relativa_%', 'velocidad_viento_m_s', 'precipitacion_mm_mes']:
             
             def obtener_clima_previo(año_siembra):
                 """
@@ -90,7 +151,7 @@ def agregar_clima_por_departamento(df_suelo_semillas, n_meses=14):
             # Aplicar la función a cada año de siembra en este departamento
             df_suelo_semillas.loc[mask, variable] = df_suelo_semillas.loc[mask, 'anio'].apply(obtener_clima_previo)
 
-    return df_suelo_semillas
+    return df_suelo_semillas'''
 
 
 def crear_df_suelo_semillas(path_suelo_semillas):
@@ -157,13 +218,6 @@ def main():
 
     df_final = agregar_clima_por_departamento(df_suelo_semillas, n_meses)
 
-    '''df_final = pd.merge(
-        df_semillas_con_clima,
-        df_suelo_promedio,
-        on='departamento_nombre',
-        how='inner'
-    )'''
-
     df_final["cultivo_nombre"] = df_final["cultivo_nombre"].str.strip().str.lower()
 
     # Como ya no hay merges deberia sacar departamento_nombre y coords
@@ -174,5 +228,22 @@ def main():
     ]
     df_final = df_final[column_order]
 
+    # --- Eliminar filas con datos faltantes o infinitos ---
+    # 1) Pasar ±inf a NaN (scikit-learn también los rechaza)
+    df_final = df_final.replace([np.inf, -np.inf], np.nan)
+
+    # 2) Marcar filas con al menos un NaN
+    mask_nan = df_final.isna().any(axis=1)
+
+    # 3) (Opcional) ver cuántas vas a eliminar
+    print("Filas eliminadas por NaN/inf:", int(mask_nan.sum()))
+
+    # 4) Filtrar y resetear índice
+    df_final = df_final[~mask_nan].reset_index(drop=True)
+    # --- fin limpieza ---
+
     df_final.to_csv('Archivos/df_semillas_suelo_clima.csv', index=False)
     print("Archivo guardado exitosamente!")
+
+if __name__ == "__main__":
+    main()
