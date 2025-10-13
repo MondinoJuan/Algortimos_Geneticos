@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from time import perf_counter
 
+CAPITALES = ["CABA", "Córdoba", "Corrientes", "Formosa", "La Plata", "La Rioja", "Mendoza", "Neuquén", "Paraná", "Posadas", "Rawson", "Resistencia", "Río Gallegos", "San Fernando del Valle de Catamarca", "San Miguel de Tucumán", "San Salvador de Jujuy", "Salta", "San Juan", "San Luis", "Santa Fe", "Santa Rosa", "Santiago del Estero", "Ushuaia", "Viedma"]
+
 def generarPermutacion(cantidadGenes):
     cromosoma = list(range(cantidadGenes))
     random.shuffle(cromosoma)
@@ -25,7 +27,7 @@ def calculadorAptitudes(poblacion, distancias):
             siguienteCapital = individuo[i + 1]
             distanciaTotal += distancias[capitalActual][siguienteCapital]
         distanciaTotal += distancias[individuo[-1]][individuo[0]]
-        fitness = 1 / (1 + distanciaTotal)
+        fitness = 1 / distanciaTotal
         aptitudes.append(fitness)
     return aptitudes
 
@@ -33,7 +35,7 @@ def calculadorEstadisticos(poblacion, aptitudes):
     maxAptitudes = max(aptitudes)
     minAptitudes = min(aptitudes)
     mejorCromosoma = poblacion[aptitudes.index(maxAptitudes)][:]
-    avgAptitudes = round((sum(aptitudes)/len(aptitudes)))
+    avgAptitudes = (sum(aptitudes)/len(aptitudes))
     return [maxAptitudes, minAptitudes, avgAptitudes, mejorCromosoma]
 
 def seleccionRuleta(poblacion, aptitudes, cantidadIndividuos):
@@ -183,7 +185,7 @@ def crearTabla(maximos, minimos, promedios, mejores, metodoSeleccion, opcionElit
     nombreMetodo = '_Ruleta' if metodoSeleccion == 1 else '_Torneo'
     nombreElitismo = '_Elitismo' if opcionElitismo == 2 else ''
     nombreCantidadCiclos = str(len(maximos) - 1)
-    cadenas = ['->'.join(str(ciudad) for ciudad in cromosoma) for cromosoma in mejores]
+    cadenas = ['->'.join(CAPITALES[ciudad] for ciudad in cromosoma) for cromosoma in mejores]
     distanciasTotales = [f"{(1/aptitudMaxima - 1):.2f}" if aptitudMaxima > 0 else "inf" for aptitudMaxima in maximos]
     dfNuevo = pd.DataFrame({
         'Generacion': range(len(maximos)),
@@ -197,7 +199,6 @@ def crearTabla(maximos, minimos, promedios, mejores, metodoSeleccion, opcionElit
     ruta = os.path.join("Excels", archivoExcel)
     if os.path.exists(ruta):
         os.remove(ruta)
-    dfNuevo.to_excel(ruta, index=False)
     dfNuevo.to_excel(ruta, index=False, float_format="%.8f")
     print(f"Tabla generada: {archivoExcel}")
 
@@ -233,7 +234,7 @@ def calcularDistanciaRecorrido(recorrido, distancias):
 
 def algoritmoGenetico(opcionElitismo, opcionSeleccion, distancias):
     tiempoInicial = perf_counter()
-    cantidadCiclos = 20000
+    cantidadCiclos = 200
     probCrossover = 0.85
     probMutacion = 0.10
     cantidadIndividuos = 50
