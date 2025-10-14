@@ -4,7 +4,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from time import perf_counter
 
-CAPITALES = ["CABA", "Córdoba", "Corrientes", "Formosa", "La Plata", "La Rioja", "Mendoza", "Neuquén", "Paraná", "Posadas", "Rawson", "Resistencia", "Río Gallegos", "San Fernando del Valle de Catamarca", "San Miguel de Tucumán", "San Salvador de Jujuy", "Salta", "San Juan", "San Luis", "Santa Fe", "Santa Rosa", "Santiago del Estero", "Ushuaia", "Viedma"]
+CAPITALES = ["CABA", "Córdoba", "Corrientes", "Formosa", "La Plata", "La Rioja", "Mendoza", "Neuquén", "Paraná", "Posadas", "Rawson", "Resistencia", 
+            "Río Gallegos", "San Fernando del Valle de Catamarca", "San Miguel de Tucumán", "San Salvador de Jujuy", "Salta", "San Juan", "San Luis", 
+            "Santa Fe", "Santa Rosa", "Santiago del Estero", "Ushuaia", "Viedma"]
 
 def generarPermutacion(cantidadGenes):
     cromosoma = list(range(cantidadGenes))
@@ -18,8 +20,11 @@ def generarPoblacion(cantidadCromosomas, cantidadGenes):
         poblacion.append(cromosoma)
     return poblacion
 
-def calculadorAptitudes(poblacion, distancias):
-    aptitudes = []
+def funcionObjetivo(x):
+    return 1 / x
+
+def calculadorObjetivo(poblacion, distancias):
+    objetivos = []
     for individuo in poblacion:
         distanciaTotal = 0
         for i in range(len(individuo) - 1):
@@ -27,7 +32,16 @@ def calculadorAptitudes(poblacion, distancias):
             siguienteCapital = individuo[i + 1]
             distanciaTotal += distancias[capitalActual][siguienteCapital]
         distanciaTotal += distancias[individuo[-1]][individuo[0]]
-        fitness = 1 / distanciaTotal
+        objetivo = funcionObjetivo(distanciaTotal)
+        objetivos.append(objetivo)
+    return objetivos
+
+def calculadorAptitudes(poblacion, distancias):
+    aptitudes = []
+    objetivos = calculadorObjetivo(poblacion, distancias)
+    sumObj = sum(objetivos)
+    for objetivo in objetivos:
+        fitness = objetivo / sumObj if sumObj > 0 else 0 
         aptitudes.append(fitness)
     return aptitudes
 
@@ -234,7 +248,7 @@ def calcularDistanciaRecorrido(recorrido, distancias):
 
 def algoritmoGenetico(opcionElitismo, opcionSeleccion, distancias):
     tiempoInicial = perf_counter()
-    cantidadCiclos = 200
+    cantidadCiclos = 200000
     probCrossover = 0.85
     probMutacion = 0.10
     cantidadIndividuos = 50
