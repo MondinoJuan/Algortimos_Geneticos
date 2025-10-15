@@ -1,6 +1,7 @@
 import pandas as pd
 import folium
 import webbrowser
+import os
 
 def obtenerCapitales():
     return [
@@ -105,8 +106,9 @@ def visualizarRecorrido(recorrido, capitales, opcionBusqueda):
         archivo = "recorridoViajanteHeuristica.html"
     elif opcionBusqueda == 3:
         archivo = "recorridoViajanteAlgGen.html"
-    mapa.save(archivo)
-    print(f"\nMapa guardado en '{archivo}'")
+    path = os.path.join("Recorridos", archivo)
+    mapa.save(path)
+    print(f"\nMapa guardado en '{path}'")
     webbrowser.open(archivo)
     print("Abriendo mapa en el navegador...")
     return mapa

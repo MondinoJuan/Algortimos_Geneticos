@@ -43,16 +43,16 @@ def calculadorAptitudes(poblacion, distancias):
     for objetivo in objetivos:
         fitness = objetivo / sumObj if sumObj > 0 else 0 
         aptitudes.append(fitness)
-    return aptitudes
+    return aptitudes, objetivos
 
-def calculadorEstadisticos(poblacion, aptitudes):
-    maxAptitudes = max(aptitudes)
-    minAptitudes = min(aptitudes)
-    mejorCromosoma = poblacion[aptitudes.index(maxAptitudes)][:]
-    avgAptitudes = (sum(aptitudes)/len(aptitudes))
-    return [maxAptitudes, minAptitudes, avgAptitudes, mejorCromosoma]
+def calculadorEstadisticos(poblacion, variable):
+    maxVar = max(variable)
+    minVar = min(variable)
+    mejorCromosomaVar = poblacion[variable.index(maxVar)][:]
+    promedioVar = (sum(variable)/len(variable))
+    return [maxVar, minVar, promedioVar, mejorCromosomaVar]
 
-def seleccionRuleta(poblacion, aptitudes, cantidadIndividuos):
+'''def seleccionRuleta(poblacion, aptitudes, cantidadIndividuos):
     fitnessTotal = sum(aptitudes)
     if fitnessTotal == 0:
         return [random.choice(poblacion)[:] for _ in range(cantidadIndividuos)]
@@ -69,7 +69,20 @@ def seleccionRuleta(poblacion, aptitudes, cantidadIndividuos):
             if probAleatoria <= acum:
                 seleccionados.append(poblacion[i][:])
                 break
-    return seleccionados
+    return seleccionados'''
+
+def seleccionRuleta(poblacion, aptitudes, n):
+    acumuladas, s = [], 0.0
+    for f in aptitudes:  # ya suman 1
+        s += f; acumuladas.append(s)
+    sel = []
+    for _ in range(n):
+        r = random.random()
+        # búsqueda lineal está bien; si querés O(log n), usá bisect
+        for i, a in enumerate(acumuladas):
+            if r <= a:
+                sel.append(poblacion[i][:]); break
+    return sel
 
 def seleccionTorneo(poblacion, aptitudes, cantidadIndividuos, cantidadCompetidores):
     seleccionados = []
@@ -117,17 +130,30 @@ def mutacionSwap(poblacion, probMutacion):
     return poblacionMutada
 
 def ciclosSinElitismo(distancias, cantidadCiclos, probCrossover, probMutacion, cantidadIndividuos, cantidadGenes, opcionSeleccion, cantidadCompetidores):
-    maximos = []
-    minimos = []
-    promedios = []
-    mejores = []
+    maximosApt = []
+    minimosApt = []
+    promediosApt = []
+    mejoresApt = []
+    maximosObj = []
+    minimosObj = []
+    promediosObj = []
+    mejoresObj = []
+
     poblacion = generarPoblacion(cantidadIndividuos, cantidadGenes)
-    aptitudes = calculadorAptitudes(poblacion, distancias)
-    estadisticos = calculadorEstadisticos(poblacion, aptitudes)
-    maximos.append(estadisticos[0])
-    minimos.append(estadisticos[1])
-    promedios.append(estadisticos[2])
-    mejores.append(estadisticos[3][:])
+    aptitudes, objetivos = calculadorAptitudes(poblacion, distancias)
+    estadisticosApt = calculadorEstadisticos(poblacion, aptitudes)
+    estadisticosObj = calculadorEstadisticos(poblacion, objetivos)
+
+    maximosApt.append(estadisticosApt[0])
+    minimosApt.append(estadisticosApt[1])
+    promediosApt.append(estadisticosApt[2])
+    mejoresApt.append(estadisticosApt[3][:])
+
+    maximosObj.append(estadisticosObj[0])
+    minimosObj.append(estadisticosObj[1])
+    promediosObj.append(estadisticosObj[2])
+    mejoresObj.append(estadisticosObj[3][:])
+
     for _ in range(cantidadCiclos):
         if opcionSeleccion == 1:
             poblacion = seleccionRuleta(poblacion, aptitudes, cantidadIndividuos)
@@ -146,26 +172,47 @@ def ciclosSinElitismo(distancias, cantidadCiclos, probCrossover, probMutacion, c
             else:
                 nuevaPoblacion.append(poblacion[i][:])
         poblacion = mutacionSwap(nuevaPoblacion, probMutacion)
-        aptitudes = calculadorAptitudes(poblacion, distancias)
-        estadisticos = calculadorEstadisticos(poblacion, aptitudes)
-        maximos.append(estadisticos[0])
-        minimos.append(estadisticos[1])
-        promedios.append(estadisticos[2])
-        mejores.append(estadisticos[3][:])
-    return maximos, minimos, promedios, mejores
+        aptitudes, objetivos = calculadorAptitudes(poblacion, distancias)
+        estadisticosApt = calculadorEstadisticos(poblacion, aptitudes)
+        estadisticosObj = calculadorEstadisticos(poblacion, objetivos)
+
+        maximosApt.append(estadisticosApt[0])
+        minimosApt.append(estadisticosApt[1])
+        promediosApt.append(estadisticosApt[2])
+        mejoresApt.append(estadisticosApt[3][:])
+
+        maximosObj.append(estadisticosObj[0])
+        minimosObj.append(estadisticosObj[1])
+        promediosObj.append(estadisticosObj[2])
+        mejoresObj.append(estadisticosObj[3][:])
+
+    return maximosApt, minimosApt, promediosApt, mejoresApt, maximosObj, minimosObj, promediosObj, mejoresObj
 
 def ciclosConElitismo(distancias, cantidadCiclos, probCrossover, probMutacion, cantidadIndividuos, cantidadGenes, opcionSeleccion, cantidadElitismo, cantidadCompetidores=None):
-    maximos = []
-    minimos = []
-    promedios = []
-    mejores = []
+    maximosApt = []
+    minimosApt = []
+    promediosApt = []
+    mejoresApt = []
+    maximosObj = []
+    minimosObj = []
+    promediosObj = []
+    mejoresObj = []
+
     poblacion = generarPoblacion(cantidadIndividuos, cantidadGenes)
-    aptitudes = calculadorAptitudes(poblacion, distancias)
-    estadisticos = calculadorEstadisticos(poblacion, aptitudes)
-    maximos.append(estadisticos[0])
-    minimos.append(estadisticos[1])
-    promedios.append(estadisticos[2])
-    mejores.append(estadisticos[3][:])
+    aptitudes, objetivos = calculadorAptitudes(poblacion, distancias)
+    estadisticosApt = calculadorEstadisticos(poblacion, aptitudes)
+    estadisticosObj = calculadorEstadisticos(poblacion, objetivos)
+
+    maximosApt.append(estadisticosApt[0])
+    minimosApt.append(estadisticosApt[1])
+    promediosApt.append(estadisticosApt[2])
+    mejoresApt.append(estadisticosApt[3][:])
+
+    maximosObj.append(estadisticosObj[0])
+    minimosObj.append(estadisticosObj[1])
+    promediosObj.append(estadisticosObj[2])
+    mejoresObj.append(estadisticosObj[3][:])
+
     for _ in range(cantidadCiclos):
         indicesOrdenados = sorted(range(len(aptitudes)), key=lambda i: aptitudes[i], reverse=True)
         elitistas = [poblacion[i][:] for i in indicesOrdenados[:cantidadElitismo]]
@@ -187,25 +234,33 @@ def ciclosConElitismo(distancias, cantidadCiclos, probCrossover, probMutacion, c
                 nuevaPoblacion.append(pobIntermedia[i][:])
         pobIntermedia = mutacionSwap(nuevaPoblacion, probMutacion)
         poblacion = pobIntermedia + elitistas
-        aptitudes = calculadorAptitudes(poblacion, distancias)
-        estadisticos = calculadorEstadisticos(poblacion, aptitudes)
-        maximos.append(estadisticos[0])
-        minimos.append(estadisticos[1])
-        promedios.append(estadisticos[2])
-        mejores.append(estadisticos[3][:])
-    return maximos, minimos, promedios, mejores
+        aptitudes, objetivos = calculadorAptitudes(poblacion, distancias)
+        estadisticosApt = calculadorEstadisticos(poblacion, aptitudes)
+        estadisticosObj = calculadorEstadisticos(poblacion, objetivos)
+
+        maximosApt.append(estadisticosApt[0])
+        minimosApt.append(estadisticosApt[1])
+        promediosApt.append(estadisticosApt[2])
+        mejoresApt.append(estadisticosApt[3][:])
+
+        maximosObj.append(estadisticosObj[0])
+        minimosObj.append(estadisticosObj[1])
+        promediosObj.append(estadisticosObj[2])
+        mejoresObj.append(estadisticosObj[3][:])
+
+    return maximosApt, minimosApt, promediosApt, mejoresApt, maximosObj, minimosObj, promediosObj, mejoresObj
 
 def crearTabla(maximos, minimos, promedios, mejores, metodoSeleccion, opcionElitismo):
     nombreMetodo = '_Ruleta' if metodoSeleccion == 1 else '_Torneo'
     nombreElitismo = '_Elitismo' if opcionElitismo == 2 else ''
     nombreCantidadCiclos = str(len(maximos) - 1)
     cadenas = ['->'.join(CAPITALES[ciudad] for ciudad in cromosoma) for cromosoma in mejores]
-    distanciasTotales = [f"{(1/aptitudMaxima - 1):.2f}" if aptitudMaxima > 0 else "inf" for aptitudMaxima in maximos]
+    distanciasTotales = [f"{(1/maximo):.2f}" if maximo > 0 else "inf" for maximo in maximos]
     dfNuevo = pd.DataFrame({
         'Generacion': range(len(maximos)),
-        'Max_Fitness': maximos,
-        'Min_Fitness': minimos,
-        'AVG_Fitness': promedios,
+        'Max_FO': maximos,
+        'Min_FO': minimos,
+        'AVG_FO': promedios,
         'Distancia_km': distanciasTotales,
         'Mejor_Recorrido': cadenas,
     })
@@ -224,7 +279,7 @@ def generarGrafico(maximos, minimos, promedios, titulo):
     ax.plot(x, promedios, label='Promedios', color='r', linewidth=1.5)
     ax.set_title(titulo, fontsize=16, fontweight='bold')
     ax.set_xlabel('GENERACIÓN', fontsize=12)
-    ax.set_ylabel('APTITUD (Fitness)', fontsize=12)
+    ax.set_ylabel('Función Objetivo (1 / distancia)', fontsize=12)
     ax.grid(True, alpha=0.3)
     ax.legend(fontsize=10)
     plt.tight_layout()
@@ -234,7 +289,7 @@ def generarGrafico(maximos, minimos, promedios, titulo):
     plt.close(fig)
 
 def calcularDistanciaRecorrido(recorrido, distancias):
-    #! No incluye vuelta al origen
+    # No incluye vuelta al origen
     distanciaTotal = 0
     parciales = []
     for i in range(len(recorrido) - 1):
@@ -248,9 +303,9 @@ def calcularDistanciaRecorrido(recorrido, distancias):
 
 def algoritmoGenetico(opcionElitismo, opcionSeleccion, distancias):
     tiempoInicial = perf_counter()
-    cantidadCiclos = 200000
-    probCrossover = 0.85
-    probMutacion = 0.10
+    cantidadCiclos = 200
+    probCrossover = 0.75
+    probMutacion = 0.05
     cantidadIndividuos = 50
     cantidadGenes = 24
     cantidadElitismo = 2
@@ -259,22 +314,22 @@ def algoritmoGenetico(opcionElitismo, opcionSeleccion, distancias):
     print(f"Parámetros: {cantidadCiclos} ciclos, {cantidadIndividuos} individuos")
     print(f"Probabilidad Crossover: {probCrossover}, Probabilidad Mutación: {probMutacion}\n")
     if opcionElitismo == 1:
-        maximos, minimos, promedios, mejores = ciclosSinElitismo(
+        maximosApt, minimosApt, promediosApt, mejoresApt, maximosObj, minimosObj, promediosObj, mejoresObj = ciclosSinElitismo(
             distancias, cantidadCiclos, probCrossover, probMutacion,
             cantidadIndividuos, cantidadGenes, opcionSeleccion, cantidadCompetidores
         )
         titulo = 'Ruleta' if opcionSeleccion == 1 else 'Torneo'
         titulo = f'Selección {titulo} - {cantidadCiclos} ciclos'
     else:
-        maximos, minimos, promedios, mejores = ciclosConElitismo(
+        maximosApt, minimosApt, promediosApt, mejoresApt, maximosObj, minimosObj, promediosObj, mejoresObj = ciclosConElitismo(
             distancias, cantidadCiclos, probCrossover, probMutacion,
             cantidadIndividuos, cantidadGenes, opcionSeleccion, cantidadElitismo, cantidadCompetidores
         )
         titulo = 'Ruleta' if opcionSeleccion == 1 else 'Torneo'
         titulo = f'Selección {titulo} ELITISTA - {cantidadCiclos} ciclos'
-    generarGrafico(maximos, minimos, promedios, titulo)
-    crearTabla(maximos, minimos, promedios, mejores, opcionSeleccion, opcionElitismo)
-    mejorRecorrido = mejores[-1][:]
+    generarGrafico(maximosObj, minimosObj, promediosObj, titulo)
+    crearTabla(maximosObj, minimosObj, promediosObj, mejoresObj, opcionSeleccion, opcionElitismo)
+    mejorRecorrido = mejoresObj[-1][:]
     distanciaTotal, distParciales = calcularDistanciaRecorrido(mejorRecorrido, distancias)
     indiceOrigen = mejorRecorrido[0]
     recorridoCompleto = mejorRecorrido + [indiceOrigen]
