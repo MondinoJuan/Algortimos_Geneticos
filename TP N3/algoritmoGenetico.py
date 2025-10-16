@@ -52,25 +52,6 @@ def calculadorEstadisticos(poblacion, variable):
     promedioVar = (sum(variable)/len(variable))
     return [maxVar, minVar, promedioVar, mejorCromosomaVar]
 
-'''def seleccionRuleta(poblacion, aptitudes, cantidadIndividuos):
-    fitnessTotal = sum(aptitudes)
-    if fitnessTotal == 0:
-        return [random.choice(poblacion)[:] for _ in range(cantidadIndividuos)]
-    aptitudesNormalizadas = [aptitud / fitnessTotal for aptitud in aptitudes]
-    acumuladas = []
-    acumulador = 0
-    for fitness in aptitudesNormalizadas:
-        acumulador += fitness
-        acumuladas.append(acumulador)
-    seleccionados = []
-    for _ in range(cantidadIndividuos):
-        probAleatoria = random.random()
-        for i, acum in enumerate(acumuladas):
-            if probAleatoria <= acum:
-                seleccionados.append(poblacion[i][:])
-                break
-    return seleccionados'''
-
 def seleccionRuleta(poblacion, aptitudes, n):
     acumuladas, s = [], 0.0
     for f in aptitudes:  # ya suman 1
@@ -254,7 +235,7 @@ def crearTabla(maximos, minimos, promedios, mejores, metodoSeleccion, opcionElit
     nombreMetodo = '_Ruleta' if metodoSeleccion == 1 else '_Torneo'
     nombreElitismo = '_Elitismo' if opcionElitismo == 2 else ''
     nombreCantidadCiclos = str(len(maximos) - 1)
-    cadenas = ['->'.join(CAPITALES[ciudad] for ciudad in cromosoma) for cromosoma in mejores]
+    cadenas = ["\\".join(str(i) + " & " + CAPITALES[i] for i in (cromosoma + [cromosoma[0]])) for cromosoma in mejores]
     distanciasTotales = [f"{(1/maximo):.2f}" if maximo > 0 else "inf" for maximo in maximos]
     dfNuevo = pd.DataFrame({
         'Generacion': range(len(maximos)),
@@ -289,7 +270,6 @@ def generarGrafico(maximos, minimos, promedios, titulo):
     plt.close(fig)
 
 def calcularDistanciaRecorrido(recorrido, distancias):
-    # No incluye vuelta al origen
     distanciaTotal = 0
     parciales = []
     for i in range(len(recorrido) - 1):
